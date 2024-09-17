@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=retail_demo
+    volumes:
+      - .:/usr/src/app
+    command: >
+      sh -c "
+        npm run typeorm schema:drop -- -d src/data-source.ts &&
+        npm run typeorm schema:sync -- -d src/data-source.ts &&
+        npx ts-node -r tsconfig-paths/register src/app.ts
+      "
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=retail_demo
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
