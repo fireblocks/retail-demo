@@ -1,4 +1,14 @@
-# Fireblocks Retail Demo Application
+
+<p align="center">
+  <img src="./logo.svg" width="350" alt="accessibility text">
+</p>
+<div align="center">
+
+  [Fireblocks Developer Portal](https://developers.fireblocks.com) </br>
+  [Fireblocks Sandbox Sign-up](https://www.fireblocks.com/developer-sandbox-sign-up/) <br/><br/>
+  <h1> Fireblocks Retail App Demo Backend </h1>
+</div>
+<br/>
 
 ## Overview
 

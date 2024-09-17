@@ -1,4 +1,15 @@
-# FireX - Retail Crypto Platform Demo Application
+
+<p align="center">
+  <img src="./logo.svg" width="350" alt="accessibility text">
+</p>
+<div align="center">
+
+  [Fireblocks Developer Portal](https://developers.fireblocks.com) </br>
+  [Fireblocks Sandbox Sign-up](https://www.fireblocks.com/developer-sandbox-sign-up/) <br/><br/>
+  <h1> FireX - Fireblocks Retail App Demo Frontend </h1>
+</div>
+<br/>
+
 
 FireX is a retail cryptocurrency demo platform built with Next.js, MobX, and integrated with Fireblocks for secure asset management. This project aims to provide a reference for Fireblocks integration when building applications to serve retail facing use cases.
 
