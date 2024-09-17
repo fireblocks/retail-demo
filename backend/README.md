@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="./logo.svg" width="350" alt="accessibility text">
+  <img src="../logo.svg" width="350" alt="accessibility text">
 </p>
 <div align="center">
 
