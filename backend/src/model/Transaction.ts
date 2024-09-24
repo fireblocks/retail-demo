@@ -7,9 +7,16 @@ export class Transaction extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
+
+  @Column()
+  createdAt: string
+  
   @Column()
   assetId: string;
 
+  @Column()
+  outgoing: boolean;
+  
   @Column()
   status: string;
 

@@ -19,12 +19,6 @@ export class Asset extends BaseEntity {
   @Column()
   assetName: string;
 
-  @Column({ default: 'https://default.explorer' })
-  explorerUrl: string;
-
-  @Column({ default: 'https://default.logo' })
-  logoUrl: string;
-
   @Column({ nullable: true })
   address: string;
 

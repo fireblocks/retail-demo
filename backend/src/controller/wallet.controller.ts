@@ -3,25 +3,27 @@ import { VaultAccount } from '@model/VaultAccount';
 import { User } from '@model/User';
 import { Asset } from '@model/Asset';
 import { SupportedAsset } from '@model/SupportedAsset';
-import { VaultAccountService } from '@service/fireblocks/vaultAccount.service';
+import { fireblocksVaultAccountService } from '@service/fireblocks/';
 import { Wallet } from '@model/Wallet';
 import { isUTXO } from '../utils/utxo.utils';
+import { createLogger } from '@util/logger.utils';
+import { vaultConfig } from '@util/vaultConfig';
 
-const vaultAccountService = new VaultAccountService();
+const logger = createLogger('<Wallet Controller>');
 
 export class WalletController {
   static async getUserAssets(req: Request, res: Response) {
     try {
       const user = req.user as User;
 
-      console.log('Going to get user wallet for user:', user.id);
-      
+      logger.info(`Going to get user wallet for user: ${user.id}`);
+
       const wallet = await Wallet.find({
         where: { user: { id: user.id } },
         relations: ['assets', 'assets.vaultAccount', 'assetBalances'],
       });
 
-      console.log('In get user wallet:', wallet);
+      logger.info(`In get user wallet: ${JSON.stringify(wallet)}`);
       const walletData = wallet.map((wallet) => ({
         id: wallet.id,
         name: wallet.name,
@@ -29,13 +31,13 @@ export class WalletController {
         assets: wallet.assets.map((asset) => ({
           assetId: asset.assetId,
           address: asset.address,
-          vaultAccountId: asset.vaultAccount.fireblocksVaultId
+          vaultAccountId: asset.vaultAccount.fireblocksVaultId,
         })),
       }));
 
       res.status(200).json(walletData);
     } catch (error) {
-      console.error('Error fetching user wallets:', error);
+      logger.error(`Error fetching user wallets: ${JSON.stringify(error)}`);
       res.status(500).json({ message: 'Internal server error' });
     }
   }
@@ -46,7 +48,7 @@ export class WalletController {
   }
 
   static async createAssetInWallet(req: Request, res: Response) {
-    console.log('In create new asset!');
+    logger.info('In create new asset!');
     try {
       const { walletId } = req.params;
       const { assetId } = req.body;
@@ -64,9 +66,9 @@ export class WalletController {
         assetId,
         req.user as User
       );
-  
+
       const { address, balance, vaultAccount } = newAsset;
-      console.log('Created a new asset:', JSON.stringify(newAsset, null, 2));
+      logger.info(`Created a new asset: ${JSON.stringify(newAsset)}`);
       res.status(200).send({
         assetId: newAsset.assetId,
         address,
@@ -74,14 +76,14 @@ export class WalletController {
         vaultAccountId: vaultAccount.fireblocksVaultId,
       });
     } catch (error) {
-      console.error('Error creating asset in wallet:', error);
+      logger.error(`Error creating asset in wallet: ${JSON.stringify(error)}`);
       res.status(500).json({ message: 'Internal server error' });
     }
   }
 
   static createUserWallet = async (req: Request, res: Response) => {
     const user: User = req.user as User;
-    console.log('Got a request to create a new wallet for user:', user);
+    logger.info(`Got a request to create a new wallet for user: ${user}`);
     const wallet = Wallet.create({
       name: user.name,
       assets: [],
@@ -104,13 +106,13 @@ async function handleAssetCreation(
   let newAddress: any;
 
   if (isUTXO(assetId)) {
-    newAddress = await vaultAccountService.createDepositAddress(
+    newAddress = await fireblocksVaultAccountService.createDepositAddress(
       vaultAccount.fireblocksVaultId,
       assetId,
       user.id
     );
   } else {
-    newAddress = await vaultAccountService.createVaultWallet(
+    newAddress = await fireblocksVaultAccountService.createVaultWallet(
       vaultAccount.fireblocksVaultId,
       assetId
     );
@@ -132,19 +134,19 @@ async function determineVaultAccount(
   wallet: Wallet,
   assetId: string
 ): Promise<VaultAccount> {
-  console.log('In determine vault account');
-  
+  logger.info('In determine vault account');
+  const omnibusVaultAccountId = vaultConfig.getOmnibusVaultId();
   // Handle UTXO assets
   if (isUTXO(assetId)) {
-    console.log('Asset is a UTXO asset');
+    logger.info('Asset is a UTXO asset');
     const omniVaultAccount = await VaultAccount.findOne({
-      where: { fireblocksVaultId: '0' },
+      where: { fireblocksVaultId: omnibusVaultAccountId },
     });
 
     if (!omniVaultAccount) {
-      throw new Error('Omnibus vault account (ID 0) not found.');
+      throw new Error('Omnibus vault account not found.');
     }
-    console.log('returning omnibus vault account with ID 0');
+    logger.info('returning omnibus vault account');
     return omniVaultAccount;
   }
 
@@ -156,22 +158,28 @@ async function determineVaultAccount(
 
   // Check if there's a vault account without the requested asset
   for (const asset of existingAssets) {
-    if (asset.assetId !== assetId) {
-      const assetsInVault = await Asset.find({
-        where: { vaultAccount: { id: asset.vaultAccount.id }, assetId: assetId },
-      });
-      
-      if (assetsInVault.length === 0) {
-        // Found a vault account without the requested asset
-        return asset.vaultAccount;
-      }
+    if (asset.assetId === assetId) {
+      // If the asset already exists in a vault account, skip it
+      continue;
+    }
+
+    const assetsInVault = await Asset.find({
+      where: {
+        vaultAccount: { id: asset.vaultAccount.id },
+        assetId: assetId,
+      },
+    });
+
+    if (assetsInVault.length === 0) {
+      // Found a vault account without the requested asset
+      console.log("Found an existing vault account without the requested asset:", asset.vaultAccount.fireblocksVaultId)
+      return asset.vaultAccount;
     }
   }
 
   // If no suitable vault account found, create a new one
-  const newVaultAccountResponse = await vaultAccountService.createVaultAccount(
-    wallet.user.id
-  );
+  const newVaultAccountResponse =
+    await fireblocksVaultAccountService.createVaultAccount(wallet.user.id);
 
   const newVaultAccount = VaultAccount.create({
     fireblocksVaultId: newVaultAccountResponse.id,
@@ -179,6 +187,6 @@ async function determineVaultAccount(
   });
 
   await newVaultAccount.save();
-
+  console.log("Created a new vault account:", newVaultAccount.fireblocksVaultId)
   return newVaultAccount;
 }

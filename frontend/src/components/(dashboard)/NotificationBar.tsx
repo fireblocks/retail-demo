@@ -1,18 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { IconArrowLeft, IconArrowRight, IconX } from '@tabler/icons-react';
 import { Button } from '@/foundation/button';
 import notificationStore from '@/store/notificationStore';
+import authStore from '@/store/authStore'; 
 
 const NotificationBar: React.FC = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnseenNotifications, setHasUnseenNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const checkNotifications = useCallback(() => {
+    if (authStore.user) {
+      const userNotifications = notificationStore.getUserNotifications();
+      setNotifications(userNotifications);
+      setHasUnseenNotifications(userNotifications.length > 0 && !isOpen);
+    }
+  }, [isOpen, authStore.user]);
 
   useEffect(() => {
-    if (notificationStore.notifications.length > 0 && !isOpen) {
-      setHasUnseenNotifications(true);
-    }
-  }, [notificationStore.notifications.length, isOpen]);
+    checkNotifications();
+  }, [checkNotifications]);
 
   const toggleOpen = () => {
     setIsOpen(prev => !prev);
@@ -21,8 +29,12 @@ const NotificationBar: React.FC = observer(() => {
     }
   };
 
+  if (!authStore.user) {
+    return null;
+  }
+
   return (
-    <div className={`fixed top-0 right-0 h-full bg-white shadow-lg shadow-primary border border-blue-200 border-y-0 transition-all duration-300 z-50 ${isOpen ? 'w-full sm:w-80' : 'w-10'}`}>
+    <div className={`fixed top-0 right-0 h-full bg-white shadow-lg shadow-primary border border-blue-200 border-y-0 transition-all duration-300 z-50 ${isOpen ? 'w-full sm:w-96' : 'w-10'}`}>
       <Button
         variant="ghost"
         className="absolute top-1/2 -left-10 transform -translate-y-1/2 bg-white shadow-md border border-blue-200"
@@ -38,19 +50,39 @@ const NotificationBar: React.FC = observer(() => {
         <div className="p-4 h-full overflow-y-auto overflow-x-hidden">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg text-primary font-semibold">Notifications</h2>
-            <Button variant="ghost" className='text-primary hover:bg-blue-100' onClick={() => notificationStore.clearAllNotifications()}>Clear All</Button>
+            <Button 
+              variant="ghost" 
+              className='text-primary hover:bg-blue-100' 
+              onClick={() => {
+                notificationStore.clearAllNotifications();
+                setNotifications([]);
+              }}
+            >
+              Clear All
+            </Button>
           </div>
-          {notificationStore.notifications.map(notification => (
+          {[...notifications].reverse().map(notification => (
             <div key={notification.id} className="mb-4 p-2 bg-gray-100 rounded max-w-full">
               <div className="flex justify-between items-start">
-                <p className="break-all pr-2 flex-grow overflow-hidden">{notification.message}</p>
-                <Button variant="ghost" size="sm" className="flex-shrink-0 ml-2" onClick={() => notificationStore.removeNotification(notification.id)}>
+                <div className="w-full">
+                  <h3 className="font-semibold text-primary">{notification.header}</h3>
+                  <pre className="whitespace-pre-wrap font-sans text-sm mt-1">{notification.body}</pre>
+                  <small className="text-gray-500 block mt-1 break-all">
+                    {new Date(notification.timestamp).toLocaleString()}
+                  </small>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex-shrink-0 ml-2" 
+                  onClick={() => {
+                    notificationStore.removeNotification(notification.id);
+                    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+                  }}
+                >
                   <IconX size={16} />
                 </Button>
               </div>
-              <small className="text-gray-500 block mt-1 break-all">
-                {new Date(notification.timestamp).toLocaleString()}
-              </small>
             </div>
           ))}
         </div>

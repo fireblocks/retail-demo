@@ -1,17 +1,19 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from 'typeorm';
 
-
 @Entity()
 export class SupportedAsset extends BaseEntity {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   explorerUrl: string;
 
   @Column()
-  logoUrl: string;
+  fireblocksAssetId: string
 
+  @Column({default: 0})
+  depositsCounter: number;
+  
   @Column()
-  assetId: string
+  name: string
 }

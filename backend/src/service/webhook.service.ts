@@ -1,10 +1,9 @@
-import { WalletService } from './wallet.service';
-import { WalletAssetService } from './walletAsset.service';
+import { walletService, walletAssetService } from '@service';
+import { createLogger } from '@util/logger.utils';
 
-const walletService = new WalletService();
-const walletAssetService = new WalletAssetService();
+const logger = createLogger('<Webhook Service>');
 
-export class WebhookService {
+class WebhookService {
   public async updateIncomingBalance(data: any) {
     const txData = data.type.data;
     const {
@@ -20,15 +19,17 @@ export class WebhookService {
     const walletId = await walletService.getWalletForVaultAccount(
       destination.id
     );
-    console.log(
-      'New incoming transfer - updating balance for wallet:',
-      walletId
+    logger.info(
+      `New incoming transfer - updating balance for wallet:
+      ${walletId}`
     );
     await walletAssetService.updateAssetBalance(
       walletId,
       assetId,
       amountInfo.netAmount
     );
-    return true
+    return true;
   }
 }
+
+export const webhookService = new WebhookService();

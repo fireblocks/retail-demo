@@ -10,14 +10,18 @@ class ApiClient {
   public fireblocksClient: Fireblocks;
 
   constructor(basePath?: BasePath) {
-    this.fireblocksClient = new Fireblocks({
-      apiKey,
-      secretKey,
-      basePath: basePath || BasePath.US,
-      additionalOptions: {
-        userAgent: 'retail-demo',
-      },
-    });
+    try {
+      this.fireblocksClient = new Fireblocks({
+        apiKey,
+        secretKey,
+        basePath: basePath || BasePath.US,
+        additionalOptions: {
+          userAgent: 'retail-demo',
+        },
+      });
+    } catch (error) {
+      throw error.response.data;
+    }
   }
 }
 const apiClient = new ApiClient();

@@ -1,4 +1,6 @@
 import React from "react";
+import { observer } from "mobx-react-lite";
+import { reaction } from "mobx";
 import { IconCoinBitcoin, IconCurrencyEthereum, IconCurrencySolana } from "@tabler/icons-react";
 import { Button } from "@/foundation/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/foundation/card";
@@ -6,7 +8,7 @@ import { Input } from "@/foundation/input";
 import { Label } from "@/foundation/label";
 import { Asset, TransactionParams } from "@/lib/types";
 import { useDialog } from "@/lib/hooks/useDialog";
-import { formatBalance } from "@/lib/helpers";
+import { formatBalance, getAssetNameById } from "@/lib/helpers";
 import apiService from "@/services/api.service";
 import { DepositDialog } from "./DepositDialog";
 import { TransferDialog } from "./TransferDialog";
@@ -14,24 +16,39 @@ import notificationStore from "@/store/notificationStore";
 import transactionStore from "@/store/transactionStore";
 import walletStore from "@/store/walletStore";
 
-export const WalletCard: React.FC<Asset> = ({ assetId, balance, addresses }) => {
+export const WalletCard: React.FC<Asset> = observer(({ assetId, addresses }) => {
   const deposit = useDialog();
   const transfer = useDialog();
 
+  React.useEffect(() => {
+    const disposer = reaction(
+      () => walletStore.getAssetBalance(assetId),
+      (balance) => console.log(`Balance for ${assetId} changed to:`, balance)
+    );
+    return () => disposer();
+  }, [assetId]);
+
+  const balance = walletStore.getAssetBalance(assetId);
+
   const handleCreateTransaction = async (transactionParams: TransactionParams) => {
     try {
+      console.log("In handle create transaction!")
       const result = await apiService.createTransaction(
         transactionParams.amount,
         transactionParams.assetId,
-        transactionParams.destination
+        transactionParams.destination,
+        transactionParams.feeLevel as string,
       );
-      walletStore.updateBalance(transactionParams.assetId, parseFloat(transactionParams.amount) * -1)
+      // Use a negative amount for outgoing transactions
+      walletStore.updateOutgoingBalance(transactionParams.assetId, parseFloat(transactionParams.amount));
+      
       notificationStore.addNotification(
-        `Transaction created successfully for ${assetId}:
-        Amount: ${transactionParams.amount}
-        Destination: ${transactionParams.destination}
-        Transaction ID: ${result.txId}
-        Status: ${result.status}`
+        'New Transaction',
+        `Transaction created successfully for ${name}:
+        Amount:       ${transactionParams.amount}
+        Destination:  ${transactionParams.destination}
+        Transaction ID: ${result.id}
+        Status:       ${result.status}`
       );
       transactionStore.addTransaction({
         amount: transactionParams.amount,
@@ -41,13 +58,15 @@ export const WalletCard: React.FC<Asset> = ({ assetId, balance, addresses }) => 
         status: result.status,
         txHash: "",
         destinationExternalAddress: transactionParams.destination,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        outgoing: true
       })
-      walletStore.updateOutgoingBalance(transactionParams.assetId, parseFloat(transactionParams.amount));
-
     } catch (error) {
       console.error("Transaction failed:", error);
-      notificationStore.addNotification(`Transaction failed for ${assetId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      notificationStore.addNotification(
+      'New Transaction', 
+      `Transaction failed for ${assetId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
     }
   };
 
@@ -70,7 +89,7 @@ export const WalletCard: React.FC<Asset> = ({ assetId, balance, addresses }) => 
         <CardTitle className="flex justify-center">
           {renderIcon()}
         </CardTitle>
-        <CardDescription className="flex justify-center">{assetId}</CardDescription>
+        <CardDescription className="flex justify-center">{getAssetNameById(assetId)}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col text-center items-center space-y-1.5">
@@ -98,4 +117,4 @@ export const WalletCard: React.FC<Asset> = ({ assetId, balance, addresses }) => 
       </CardFooter>
     </Card>
   );
-};
+});

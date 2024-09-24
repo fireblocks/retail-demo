@@ -1,9 +1,21 @@
 import { Transaction } from '@model/Transaction';
 import { VaultAccount } from '@model/VaultAccount';
 import { Wallet } from '@model/Wallet';
+import { createLogger } from '@util/logger.utils';
+import { fireblocksTransactionService } from '@service/fireblocks';
+import {
+  TransferPeerPathType,
+  TransactionRequestFeeLevelEnum,
+  TransactionResponse,
+} from '@fireblocks/ts-sdk';
+import { DBTransaction } from 'src/types/WebhookEvents';
 
-export class TransactionService {
-  async getWalletForFireblocksTx(fireblocksTxId: string): Promise<{wallet: Wallet, transaction: Transaction}> {
+const logger = createLogger('<Tx Service>');
+
+class TransactionService {
+  async getWalletForFireblocksTx(
+    fireblocksTxId: string
+  ): Promise<{ wallet: Wallet; transaction: Transaction }> {
     const transaction = await Transaction.findOne({
       where: { fireblocksTxId },
       relations: ['wallet'],
@@ -14,35 +26,28 @@ export class TransactionService {
       relations: ['user'],
     });
 
-    return {wallet, transaction};
+    return { wallet, transaction };
   }
 
-  async addTransaction(
-    wallet,
-    amount,
-    assetId,
-    fireblocksTxId,
-    status,
-    txHash?,
-    sourceVaultAccount?,
-    destinationVaultAccount?,
-    sourceExternalAddress?,
-    destinationExternalAddress?
-  ): Promise<void> {
+  async addTransaction(txParams: DBTransaction): Promise<void> {
     const transaction = Transaction.create({
-      wallet,
-      amount,
-      assetId,
-      fireblocksTxId,
-      status,
-      txHash: txHash || null,
-      sourceVaultAccount: sourceVaultAccount || null,
-      destinationVaultAccount: destinationVaultAccount || null,
-      sourceExternalAddress: sourceExternalAddress || null,
-      destinationExternalAddress: destinationExternalAddress || null
+      wallet: txParams.wallet,
+      amount: txParams.amount,
+      assetId: txParams.assetId,
+      fireblocksTxId: txParams.fireblocksTxId,
+      status: txParams.status,
+      txHash: txParams.txHash || null,
+      sourceVaultAccount: txParams.sourceVaultAccount || null,
+      destinationVaultAccount: txParams.destinationVaultAccount || null,
+      sourceExternalAddress: txParams.sourceExternalAddress || null,
+      destinationExternalAddress: txParams.destinationExternalAddress || null,
+      createdAt: txParams.createdAt,
+      outgoing: txParams.outgoing
     });
 
-    console.log("Saving new transaction to the DB, tx object:", transaction)
+    logger.info(
+      `Saving new transaction to the DB, tx object: ${JSON.stringify(transaction)}`
+    );
 
     transaction.save();
   }
@@ -51,10 +56,11 @@ export class TransactionService {
     const transaction = await Transaction.findOne({
       where: { fireblocksTxId: txId },
     });
-    console.log(
+    logger.info(
       `in update tx status for transaction: ${JSON.stringify(transaction)}, fbksTxId: ${txId}, status: ${status}`
     );
     transaction.status = status;
+    logger.info(`Saving the transaction after status update: ${transaction}`)
     transaction.save();
     return transaction;
   }
@@ -74,21 +80,61 @@ export class TransactionService {
     transaction.txHash = txData.txHash || transaction.txHash;
     transaction.amount = txData.amountInfo.amount || transaction.amount;
 
-    if (txData.source.type === "UNKNOWN") {
+    if (txData.source.type === TransferPeerPathType.Unknown) {
       transaction.sourceExternalAddress = txData.sourceAddress;
     }
-    if (txData.destination.type === "ONE_TIME_ADDRESS") {
+    if (txData.destination.type === TransferPeerPathType.OneTimeAddress) {
       transaction.destinationExternalAddress = txData.destinationAddress;
     }
 
-    if (txData.source.type === "VAULT_ACCOUNT") {
-      transaction.sourceVaultAccount = await VaultAccount.findOne({where: {fireblocksVaultId: txData.destination.id}}) || transaction.sourceVaultAccount;
+    if (txData.source.type === TransferPeerPathType.VaultAccount) {
+      transaction.sourceVaultAccount =
+        (await VaultAccount.findOne({
+          where: { fireblocksVaultId: txData.destination.id },
+        })) || transaction.sourceVaultAccount;
     }
-    if (txData.destination.type === "VAULT_ACCOUNT") {
-      transaction.destinationVaultAccount = await VaultAccount.findOne({where: {fireblocksVaultId: txData.destination.id}}) || transaction.destinationVaultAccount;
+    if (txData.destination.type === TransferPeerPathType.VaultAccount) {
+      transaction.destinationVaultAccount =
+        (await VaultAccount.findOne({
+          where: { fireblocksVaultId: txData.destination.id },
+        })) || transaction.destinationVaultAccount;
     }
-    
+
     await transaction.save();
     return transaction;
   }
+
+  public async createConsolidationTx(
+    assetId: string,
+    amount: string,
+    walletId: string
+  ): Promise<TransactionResponse> {
+    const transactionPayload = {
+      assetId: assetId,
+      amount,
+      source: {
+        type: TransferPeerPathType.VaultAccount,
+        id: walletId,
+      },
+      destination: {
+        type: TransferPeerPathType.VaultAccount,
+        id: walletId,
+      },
+      feeLevel: TransactionRequestFeeLevelEnum.Low,
+      note: `Automated UTXO consolidation Tx for ${assetId}`,
+    };
+    try {
+      logger.info(`Creating an automated consolidation Tx for ${assetId}`);
+      return await fireblocksTransactionService.createTransaction(
+        transactionPayload
+      );
+    } catch (error) {
+      logger.error(
+        `Error creating consolidation transaction for asset ${assetId}`,
+        error
+      );
+    }
+  }
 }
+
+export const transactionService = new TransactionService();

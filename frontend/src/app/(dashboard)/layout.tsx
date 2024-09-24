@@ -7,7 +7,6 @@ import walletStore from "@/store/walletStore";
 import websocketService from "@/services/websocket.service";
 import { usePathname } from "next/navigation";
 import PostLogin from "./page";
-import { PageHero } from "@/components/PageHero";
 
 export default function DashboardLayout({
   children,
@@ -22,7 +21,7 @@ export default function DashboardLayout({
         if (!authStore.user) {
           await authStore.fetchUser();
         }
-        
+
         if (authStore.user) {
           websocketService.connect('ws://localhost:3000', authStore.user.id);
           await walletStore.fetchUserWallet();
@@ -46,9 +45,7 @@ export default function DashboardLayout({
 
   return (
     <PostLogin title={pageTitle}>
-      <div className="p-4">
-        {children}
-      </div>
+      {children}
     </PostLogin>
   );
 }

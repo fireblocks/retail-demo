@@ -1,0 +1,49 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/.next
+    env_file:
+      - ./frontend/.env
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=retail_demo
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    command: >
+      sh -c "
+        sleep 10 &&
+        npm run typeorm schema:drop -- -d src/data-source.ts &&
+        npm run typeorm schema:sync -- -d src/data-source.ts &&
+        npx ts-node -r tsconfig-paths/register src/app.ts
+      "
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=retail_demo
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  mysql_data:

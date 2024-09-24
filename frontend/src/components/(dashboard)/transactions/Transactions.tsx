@@ -11,8 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/foundation/table";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp, IconArrowDown, IconArrowUp } from "@tabler/icons-react";
 import { Button } from "@/foundation/button";
+import { parseDate } from "@/lib/helpers";
+import React from 'react';
 
 const Transactions = observer(() => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -46,7 +48,13 @@ const Transactions = observer(() => {
     }
   };
 
-  const tableHeaders = ["Date", "Asset ID", "Amount", "Status", ""];
+  const tableHeaders = ["Type", "Date", "Asset ID", "Amount", "Status", ""];
+
+  const formatDate = (dateString: string | number) => {
+    const date = parseDate(dateString);
+    return date.toLocaleString(); // This will display both date and time
+    // If you only want the date, use: return date.toLocaleDateString();
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -61,9 +69,15 @@ const Transactions = observer(() => {
           </TableHeader>
           <TableBody className="border border-x-blue-100 border-r-0 border-l-0">
             {transactionStore.transactions.map((transaction) => (
-              <>
-                <TableRow key={transaction.fireblocksTxId} className="text-primary">
-                  <TableCell className="text-center">{new Date(transaction.createdAt).toLocaleDateString()}</TableCell>
+              <React.Fragment key={transaction.fireblocksTxId}>
+                <TableRow className="text-primary">
+                  <TableCell className="text-center">
+                    {transaction.outgoing ? 
+                      <IconArrowUp size={20} className="text-red-500 mx-auto" /> : 
+                      <IconArrowDown size={20} className="text-green-500 mx-auto" />
+                    }
+                  </TableCell>
+                  <TableCell className="text-center">{formatDate(transaction.createdAt)}</TableCell>
                   <TableCell className="text-center">{transaction.assetId}</TableCell>
                   <TableCell className="text-center">{transaction.amount}</TableCell>
                   <TableCell className={`text-center ${getStatusColor(transaction.status)}`}>
@@ -83,7 +97,7 @@ const Transactions = observer(() => {
                   </TableCell>
                 </TableRow>
                 {expandedRows.has(transaction.fireblocksTxId) && (
-                  <TableRow>
+                  <TableRow key={`${transaction.fireblocksTxId}-expanded`}>
                     <TableCell colSpan={5}>
                       <div className="p-4 bg-gray-50 text-primary">
                         <p><strong>Fireblocks Transaction ID:</strong> {transaction.fireblocksTxId}</p>
@@ -93,7 +107,7 @@ const Transactions = observer(() => {
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>

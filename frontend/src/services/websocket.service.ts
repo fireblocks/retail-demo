@@ -78,9 +78,12 @@ class WebSocketService {
 
 const webSocketService = new WebSocketService();
 
-// Register default message handlers
 webSocketService.addMessageHandler('balance_update', (message) => {
-  walletStore.updateBalance(message.assetId, message.amount);
+  if (typeof message.amount === 'string' || typeof message.amount === 'number') {
+    walletStore.updateBalance(message.assetId, message.amount);
+  } else {
+    console.error('Invalid amount in balance_update message:', message);
+  }
 });
 
 webSocketService.addMessageHandler('new_address', (message) => {

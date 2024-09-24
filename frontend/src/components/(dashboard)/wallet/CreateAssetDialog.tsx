@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Dialog,
   DialogContent,
@@ -17,30 +16,34 @@ import {
   SelectValue,
 } from "@/foundation/select";
 import { Button } from "@/foundation/button";
-import assetStore from "../../../store/supportedAssetsStore";
 import { useState } from "react";
+import { observer } from "mobx-react-lite";
+import assetStore from "../../../store/supportedAssetsStore";
 import { CreateAssetProps } from "@/lib/types";
 import { Loader2 } from "lucide-react";
+import { getAssetIdByName } from "@/lib/helpers";
 
-export const CreateAsset: React.FC<CreateAssetProps> = ({
+export const CreateAsset: React.FC<CreateAssetProps> = observer(({
   open,
   close,
   onCreateClick,
 }) => {
-  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedAssetName, setSelectedAssetName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateClick = async () => {
-    if (selectedAssetId) {
-      setIsLoading(true);
-      try {
-        await onCreateClick(selectedAssetId);
-      } catch (error) {
-        console.error("Error creating asset:", error);
-        // Optionally, you can add error handling here (e.g., show an error message)
-      } finally {
-        setIsLoading(false);
-        close(false);
+    if (selectedAssetName) {
+      const assetId = getAssetIdByName(selectedAssetName);
+      if (assetId) {
+        setIsLoading(true);
+        try {
+          await onCreateClick(assetId);
+        } catch (error) {
+          console.error("Error creating asset:", error);
+        } finally {
+          setIsLoading(false);
+          close(false);
+        }
       }
     }
   };
@@ -54,19 +57,17 @@ export const CreateAsset: React.FC<CreateAssetProps> = ({
         </DialogHeader>
         <div className="flex flex-col justify-center items-center py-4">
           <div className="mt-4">
-            <Select onValueChange={(value) => setSelectedAssetId(value)}>
+            <Select onValueChange={(value) => setSelectedAssetName(value)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Choose an asset" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  {assetStore.getSupportedAssets().map((asset) => {
-                    return (
-                      <SelectItem key={asset.assetId} value={asset.assetId}>
-                        {asset.assetId}
-                      </SelectItem>
-                    );
-                  })}
+                  {assetStore.getSupportedAssets().map((asset) => (
+                    <SelectItem key={asset.id} value={asset.name}>
+                      {asset.name}
+                    </SelectItem>
+                  ))}
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -77,7 +78,7 @@ export const CreateAsset: React.FC<CreateAssetProps> = ({
             variant="outline"
             type="submit"
             onClick={handleCreateClick}
-            disabled={isLoading || !selectedAssetId}
+            disabled={isLoading || !selectedAssetName}
           >
             {isLoading ? (
               <>
@@ -92,4 +93,4 @@ export const CreateAsset: React.FC<CreateAssetProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+});

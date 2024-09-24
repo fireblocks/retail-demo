@@ -29,7 +29,13 @@ This demo aims to accelerate and simplify the integration of Fireblocks into you
 
 To experience the full capabilities of this demo, please ensure the backend application is running before interacting with the frontend. This setup is essential for enabling user login and performing various actions.
 
-For those who do not have MySQL installed locally, the backend can be conveniently run in a Docker container, streamlining the setup process.
+### Running the application:
+1. Run FE without Docker (locally with npm run dev) - check the `./frontend/README` for instructions
+2. Run BE without Docker (locally with npm start) - check the `./backned/README` for instructions
+3. Run FE + BE with Docker - Make sure you have Docker and Docker Compose installed!
+    - Navigate to the root directory containing the `docker-compose.yml` file
+    - Run: `docker-compose up --build`
+
 
 ### Backend Application Details
 
