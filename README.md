@@ -33,6 +33,7 @@ To experience the full capabilities of this demo, please ensure the backend appl
 1. Run FE without Docker (locally with npm run dev) - check the `./frontend/README` for instructions
 2. Run BE without Docker (locally with npm start) - check the `./backned/README` for instructions
 3. Run FE + BE with Docker - Make sure you have Docker and Docker Compose installed!
+    - Update both `./frontend/.env` and `./backend/.env` files according to the relevant instructions (described in the corresponding README files)
     - Navigate to the root directory containing the `docker-compose.yml` file
     - Run: `docker-compose up --build`
 
