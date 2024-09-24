@@ -2,24 +2,35 @@
 
 import React, { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { IconWallet, IconReceipt2, IconCoin, IconLoader2 } from "@tabler/icons-react";
+import { IconWallet, IconReceipt2, IconCoin, IconLoader2, IconRefresh } from "@tabler/icons-react";
 import walletStore from "@/store/walletStore";
 import transactionStore from "@/store/transactionStore";
 import { BentoGrid, BentoGridItem } from "@/foundation/bento-grid";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { calculateTotalUSDValue } from "@/services/cmc.service";
+import { Button } from "@/foundation/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/foundation/tooltip";
 
 export const Dashboard = observer(() => {
-  const [totalUSDValue, setTotalUSDValue] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const initializeDashboard = async () => {
       setIsLoading(true);
-      await transactionStore.fetchTransactions();
-      // Add a slight delay before calculating the total balance
-      setTimeout(fetchTotalUSDValue, 500);
+      
+      if (transactionStore.transactions.length === 0) {
+        await transactionStore.fetchTransactions();
+      }
+
+      console.log(parseFloat(walletStore.usdBalance) == 0)
+      if (parseFloat(walletStore.usdBalance) == 0) {
+        console.log("Going to fetch USD balance.")
+        await fetchTotalUSDValue();
+      } else {
+        setIsLoading(false);
+      }
     };
 
     initializeDashboard();
@@ -27,13 +38,21 @@ export const Dashboard = observer(() => {
 
   const fetchTotalUSDValue = async () => {
     const assets = walletStore.wallet.assets || [];
-    if (assets.length > 0) {
-      const usdValue = await calculateTotalUSDValue(assets);
-      setTotalUSDValue(usdValue);
+    const assetsWithBalance = assets.filter(asset => parseFloat(asset.balance) > 0);
+    
+    if (assetsWithBalance.length > 0) {
+      const usdValue = await calculateTotalUSDValue(assetsWithBalance);
+      walletStore.setUsdBalance(usdValue.toFixed(2));
     } else {
-      setTotalUSDValue(0);
+      walletStore.setUsdBalance("0");
     }
     setIsLoading(false);
+    setIsRefreshing(false);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchTotalUSDValue();
   };
 
   const assetCount = walletStore.wallet.assets?.length || 0;
@@ -42,9 +61,29 @@ export const Dashboard = observer(() => {
   const dashboardItems = [
     {
       title: "Total Balance",
-      value: isLoading ? <IconLoader2 className="h-8 w-8 text-[#0275f2] spinner" /> : `$${totalUSDValue?.toFixed(2) ?? '0.00'}`,
+      value: isLoading ? <IconLoader2 className="h-8 w-8 text-[#0275f2] spinner" /> : `$${walletStore.usdBalance}`,
       icon: <IconCoin className="h-4 w-4 text-[#0275f2]" />,
       className: "col-span-full bg-gradient-to-r from-[#0275f20a] to-[#1d4dc50a]",
+      refreshButton: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="absolute top-2 right-2"
+              >
+                <IconRefresh className={`h-5 w-5 text-[#0275f2] ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent sideOffset={5}>
+              Refresh USD Balance
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       title: "Total Assets",
@@ -88,12 +127,13 @@ export const Dashboard = observer(() => {
               </div>
             }
             header={
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-full relative">
                 {typeof item.value === 'number' || typeof item.value === 'string' ? (
                   <span className="text-6xl font-bold text-[#0275f2]">{item.value}</span>
                 ) : (
                   item.value
                 )}
+                {item.refreshButton}
               </div>
             }
             icon={item.icon}

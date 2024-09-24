@@ -31,7 +31,8 @@ export interface CreateAssetProps extends DialogProps {
 export interface TransactionParams {
   amount: string,
   assetId: string,
-  destination: string
+  destination: string,
+  feeLevel?: string
 }
 
 export interface User {

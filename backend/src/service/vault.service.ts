@@ -1,12 +1,14 @@
 import { VaultAccount } from '@model/VaultAccount';
+import { createLogger } from '@util/logger.utils';
 
-export class VaultService {
+const logger = createLogger('<Vault Service>');
+
+class VaultService {
   public getVaultAccountForFireblocksVaultId = async (
     fireblocksVaultAccountId: string
   ) => {
-    console.log(
-      'Getting vault account for Fireblocks VA ID:',
-      fireblocksVaultAccountId
+    logger.info(
+      `Getting vault account for Fireblocks VA ID: ${fireblocksVaultAccountId}`
     );
 
     const vaultAccount = await VaultAccount.findOne({
@@ -14,10 +16,13 @@ export class VaultService {
     });
 
     if (!vaultAccount) {
-      console.log(`No vault account was found for vaultAccountId: ${fireblocksVaultAccountId}`);
+      logger.info(
+        `No vault account was found for vaultAccountId: ${fireblocksVaultAccountId}`
+      );
       return '';
-      
     }
     return vaultAccount;
   };
 }
+
+export const vaultService = new VaultService();

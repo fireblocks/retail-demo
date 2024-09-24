@@ -1,5 +1,8 @@
 import { Server as WebSocketServer, WebSocket } from 'ws';
 import { Server as HTTPServer } from 'http';
+import { createLogger } from '@util/logger.utils';
+
+const logger = createLogger('<Websocket Service>');
 
 interface UserSocketMap {
   [userId: string]: WebSocket;
@@ -16,15 +19,15 @@ class WebSocketService {
       ws.on('message', (message: string) => {
         const parsedMessage = JSON.parse(message);
         const userId = parsedMessage.userId;
-        
+
         if (userId) {
           this.addUser(userId, ws);
-          console.log(`Websocket service - user ${userId} has connected`)
+          logger.info(`Websocket service - user ${userId} has connected`);
         }
       });
 
       ws.on('close', () => {
-        console.log('Client disconnected');
+        logger.info('Client disconnected');
         this.removeUserBySocket(ws);
       });
     });
@@ -34,7 +37,6 @@ class WebSocketService {
     this.userSockets[userId] = socket;
   }
 
-  
   removeUserBySocket(socket: WebSocket) {
     for (const userId in this.userSockets) {
       if (this.userSockets[userId] === socket) {
@@ -49,12 +51,12 @@ class WebSocketService {
     const message = JSON.stringify(data);
     const client = this.userSockets[userId];
     if (client && client.readyState === WebSocket.OPEN) {
-      console.log("Sending message to client:", message)
+      logger.info(`Sending message to client: ${message}`);
       client.send(message);
     }
   }
 
-  // Broadcast data to all connected clients 
+  // Broadcast data to all connected clients
   broadcast(data: object) {
     const message = JSON.stringify(data);
     this.wss.clients.forEach((client) => {

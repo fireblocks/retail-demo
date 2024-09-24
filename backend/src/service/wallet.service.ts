@@ -2,18 +2,21 @@ import { Wallet } from '@model/Wallet';
 import { VaultAccount } from '@model/VaultAccount';
 import { Asset } from '@model/Asset';
 import { WalletAssetBalance } from '@model/WalletAssetBalance';
+import { createLogger } from '@util/logger.utils';
 
-export class WalletService {
+const logger = createLogger('<Wallet Service>');
+
+class WalletService {
   public getWalletForVaultAccount = async (vaultAccountId: string) => {
-    console.log('Getting wallet for vault account ID:', vaultAccountId);
+    logger.info(`Getting wallet for vault account ID: ${vaultAccountId}`);
 
     const vaultAccount = await VaultAccount.findOne({
       where: { fireblocksVaultId: vaultAccountId },
     });
 
     if (!vaultAccount) {
-      console.log('No vault account was found - returning null');
-      return null; 
+      logger.info('No vault account was found - returning null');
+      return null;
     }
 
     const asset = await Asset.findOne({
@@ -25,7 +28,7 @@ export class WalletService {
       relations: ['user'],
     });
 
-    console.log('Get wallet for vault account - returning wallet:', wallet);
+    logger.info(`Get wallet for vault account - returning wallet: ${wallet}`);
     return wallet;
   };
 
@@ -48,3 +51,5 @@ export class WalletService {
     return walletAssetBalance;
   };
 }
+
+export const walletService = new WalletService();

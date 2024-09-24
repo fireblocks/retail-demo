@@ -2,6 +2,7 @@ import axiosInstance from "./axios.service";
 import * as urls from "../lib/constants";
 import authStore from "@/store/authStore";
 import terminalStore from "@/store/terminalStore";
+import { TransactionParams } from "@/lib/types";
 
 class ApiService {
   /**
@@ -56,12 +57,14 @@ class ApiService {
   createTransaction = async (
     amount: string,
     assetId: string,
-    destination: string
+    destination: string,
+    feeLevel: string
   ) => {
     try {
       const transactionRequest = {
         amount,
         assetId,
+        feeLevel,
         destination: {
           type: "ONE_TIME_ADDRESS",
           oneTimeAddress: {
@@ -69,7 +72,7 @@ class ApiService {
           },
         },
       };
-      const res = await axiosInstance.post(urls.TRANSCATIONS, {
+      const res = await axiosInstance.post(urls.SUBMIT_TRANSACTION, {
         transactionRequest,
       });
       const message = `${new Date().toISOString()}: Created a new transaction from the withdrawal vault account. We have 3 withdrawal vault accounts and we are randomly creating transactions from these when users want to withdraw their funds.`
@@ -83,6 +86,11 @@ class ApiService {
 
   async getTransactions() {
     const response = await axiosInstance.get(urls.TRANSCATIONS);
+    return response.data;
+  }
+
+  async getTxFee(txData: TransactionParams) {
+    const response = await axiosInstance.post(urls.TRANSCATIONS, { transactionRequest: txData });
     return response.data;
   }
 }

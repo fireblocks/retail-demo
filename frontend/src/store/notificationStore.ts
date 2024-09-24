@@ -1,54 +1,78 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import authStore from './authStore';
+
+interface Notification {
+  id: string;
+  header: string;
+  body: string;
+  timestamp: number;
+}
 
 class NotificationStore {
-  notifications: { id: string; message: string; timestamp: number }[] = [];
+  private notifications: Notification[] = [];
 
   constructor() {
     makeAutoObservable(this);
-    this.loadNotifications();
   }
 
-  loadNotifications() {
-    if (typeof window !== 'undefined') {
-      const storedNotifications = localStorage.getItem('notifications');
+  private getStorageKey(): string {
+    return `userNotifications_${authStore.user?.id}`;
+  }
+
+  private loadNotificationsFromStorage() {
+    if (authStore.user?.id) {
+      const storedNotifications = localStorage.getItem(this.getStorageKey());
       if (storedNotifications) {
         runInAction(() => {
           this.notifications = JSON.parse(storedNotifications);
+        });
+      } else {
+        runInAction(() => {
+          this.notifications = [];
         });
       }
     }
   }
 
-  saveNotifications() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('notifications', JSON.stringify(this.notifications));
+  private saveNotificationsToStorage() {
+    if (authStore.user?.id) {
+      localStorage.setItem(this.getStorageKey(), JSON.stringify(this.notifications));
     }
   }
 
-  addNotification(message: string) {
-    const newNotification = {
+  addNotification(header: string, body: string) {
+    const notification: Notification = {
       id: Date.now().toString(),
-      message,
+      header,
+      body,
       timestamp: Date.now(),
     };
+
     runInAction(() => {
-      this.notifications.unshift(newNotification);
-      this.saveNotifications();
+      this.notifications.push(notification);
     });
+    this.saveNotificationsToStorage();
   }
 
   removeNotification(id: string) {
     runInAction(() => {
-      this.notifications = this.notifications.filter(notification => notification.id !== id);
-      this.saveNotifications();
+      this.notifications = this.notifications.filter(
+        (notification) => notification.id !== id
+      );
     });
+    this.saveNotificationsToStorage();
   }
 
   clearAllNotifications() {
     runInAction(() => {
       this.notifications = [];
-      this.saveNotifications();
     });
+    this.saveNotificationsToStorage();
+  }
+
+  getUserNotifications(): Notification[] {
+    this.loadNotificationsFromStorage();
+    return this.notifications;
   }
 }
 

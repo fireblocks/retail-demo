@@ -1,34 +1,30 @@
 import { User } from '@model/User';
 import * as bcrypt from 'bcryptjs';
 
-export class AuthService {
-  static async findByGoogleId(googleId: string): Promise<User | null> {
+class AuthService {
+  async findByGoogleId(googleId: string): Promise<User | null> {
     return User.findOne({ where: { googleId } });
   }
 
-  static async findByGitHubId(githubId: string): Promise<User | null> {
+  async findByGitHubId(githubId: string): Promise<User | null> {
     return User.findOne({ where: { githubId } });
   }
 
-  static async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<User | null> {
     return User.findOne({ where: { email } });
   }
 
-  static async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     return User.findOne({ where: { id }, relations: ['wallet'] });
   }
 
-  static async createUser(data: Partial<User>): Promise<User> {
+  async createUser(data: Partial<User>): Promise<User> {
     const user = new User();
     Object.assign(user, data);
     return user.save();
   }
 
-  static async signup(
-    name: string,
-    email: string,
-    password: string
-  ): Promise<User> {
+  async signup(name: string, email: string, password: string): Promise<User> {
     // Check if the user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -51,3 +47,5 @@ export class AuthService {
     return user;
   }
 }
+
+export const authService = new AuthService();

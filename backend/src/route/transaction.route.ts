@@ -5,6 +5,11 @@ const router = Router();
 
 router.post(
   '/',
+  TransactionController.initiateNewTxFlow
+);
+
+router.post(
+  '/submit',
   TransactionController.createNewTransfer
 );
 

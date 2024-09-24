@@ -37,11 +37,19 @@ class WalletStore {
     id: null,
   };
   walletLoaded = false;
+  usdBalance = "0";
 
   constructor() {
     makeAutoObservable(this);
   }
 
+  setUsdBalance(balance: string) {
+    this.usdBalance = balance;
+  }
+  getAssetBalance(assetId: string): string {
+    const asset = this.wallet.assets?.find(a => a.assetId === assetId);
+    return asset ? asset.balance : '0';
+  }
   setUserAsset(newAsset: any) {
     console.log("In set user asset:", JSON.stringify(newAsset, null, 2))
     if (!newAsset || typeof newAsset !== 'object') {
@@ -173,13 +181,19 @@ class WalletStore {
 
         if (newAsset && newAsset.assetId) {
           this.setUserAsset(newAsset);
-          notificationStore.addNotification(`New asset ${assetId} created successfully.`);
+          notificationStore.addNotification(
+            "New Asset Created",
+            `${assetId} created successfully.`
+          );
         }
 
         return response?.data;
       } catch (error) {
         console.error("Failed to create a new asset:", error);
-        notificationStore.addNotification(`Failed to create asset ${assetId}.`);
+        notificationStore.addNotification(
+          "Asset Creation Failed",
+          `Failed to create asset ${assetId}.`
+        );
       }
     }
   }
@@ -193,11 +207,22 @@ class WalletStore {
     }
   }
 
-  updateBalance(assetId: string, amount: number) {
+  updateBalance(assetId: string, amount: number | string) {
+    console.log(`Updating balance for ${assetId} with amount:`, amount)
     if (this.wallet.assets) {
       const asset = this.wallet.assets.find(a => a.assetId === assetId);
       if (asset) {
-        asset.balance = (parseFloat(asset.balance || '0') + amount).toString();
+        const currentBalance = parseFloat(asset.balance || '0');
+        const amountNumber = typeof amount === 'string' ? parseFloat(amount) : amount;
+        
+        if (isNaN(currentBalance) || isNaN(amountNumber)) {
+          console.error(`Invalid balance update for ${assetId}. Current balance: ${asset.balance}, Amount: ${amount}`);
+          return;
+        }
+
+        const newBalance = (currentBalance + amountNumber).toFixed(8);
+        console.log(`Balance update for ${assetId}: ${currentBalance} + ${amountNumber} = ${newBalance}`);
+        asset.balance = newBalance;
         this.wallet.assets = [...this.wallet.assets];
       }
     }
