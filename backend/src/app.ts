@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRouter from '@route/auth.route';
@@ -11,7 +11,7 @@ import 'dotenv/config';
 import { AppDataSource } from './data-source';
 import session from 'express-session';
 import passport from '@middleware/passport.middleware';
-import { createServer } from 'http';
+import http from 'http';
 import WebSocketService from '@service/websocket.service';
 import { sweepingService, consolidationService } from '@service';
 import { setupScript } from './setupScript';
@@ -61,11 +61,11 @@ app.use('/wallet', walletRouter);
 app.use('/supported-assets', supportedAssetRouter);
 app.use('/transactions', transactionRouter);
 
-// Create an HTTP server to use with Express and WebSocket
-const server = createServer(app);
+const server = http.createServer();
+server.on('request', app);
 
 // Initialize the WebSocket service
-export const webSocketService = new WebSocketService(server);
+export const webSocketService = new WebSocketService(server); 
 
 // Initialize DB
 AppDataSource.initialize()

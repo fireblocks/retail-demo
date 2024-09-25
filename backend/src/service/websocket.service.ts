@@ -1,5 +1,5 @@
 import { Server as WebSocketServer, WebSocket } from 'ws';
-import { Server as HTTPServer } from 'http';
+import { Server as HTTPServer, IncomingMessage, ServerResponse } from 'http';
 import { createLogger } from '@util/logger.utils';
 
 const logger = createLogger('<Websocket Service>');
@@ -8,11 +8,15 @@ interface UserSocketMap {
   [userId: string]: WebSocket;
 }
 
+type CustomHTTPServer = HTTPServer<typeof IncomingMessage, typeof ServerResponse> & {
+  on(event: string, listener: (...args: any[]) => void): CustomHTTPServer;
+};
+
 class WebSocketService {
   private wss: WebSocketServer;
   private userSockets: UserSocketMap = {};
 
-  constructor(server: HTTPServer) {
+  constructor(server: CustomHTTPServer) {
     this.wss = new WebSocketServer({ server });
 
     this.wss.on('connection', (ws: WebSocket) => {
