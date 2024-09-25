@@ -61,10 +61,7 @@ app.use('/wallet', walletRouter);
 app.use('/supported-assets', supportedAssetRouter);
 app.use('/transactions', transactionRouter);
 
-// Create the server without passing app to createServer
 const server = http.createServer();
-
-// Manually handle requests using the Express app
 server.on('request', app);
 
 // Initialize the WebSocket service
