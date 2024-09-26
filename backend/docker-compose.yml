@@ -12,12 +12,8 @@ services:
       - DB_NAME=retail_demo
     volumes:
       - .:/usr/src/app
-    command: >
-      sh -c "
-        npm run typeorm schema:drop -- -d src/data-source.ts &&
-        npm run typeorm schema:sync -- -d src/data-source.ts &&
-        npx ts-node -r tsconfig-paths/register src/app.ts
-      "
+      - /usr/src/app/node_modules
+    command: npm run start
 
   db:
     image: mysql:8.0
@@ -26,6 +22,13 @@ services:
       - MYSQL_DATABASE=retail_demo
     volumes:
       - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
 volumes:
   mysql_data:
