@@ -87,7 +87,7 @@ frontend/
    ```
 
 3. Set up environment variables:
-   Create a `.env.local` file in the root directory and add the following variables:
+   Create a `.env` file in the root directory and add the following variables:
    ```
    NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:3000
    CMC_API_KEY=your_coinmarketcap_api_key
