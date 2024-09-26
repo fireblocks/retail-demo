@@ -7,7 +7,6 @@ export class Transaction extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-
   @Column()
   createdAt: string
   

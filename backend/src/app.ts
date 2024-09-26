@@ -8,7 +8,7 @@ import supportedAssetRouter from '@route/supportedAssets.route';
 import walletRouter from '@route/wallet.route';
 import 'reflect-metadata';
 import 'dotenv/config';
-import { AppDataSource } from './data-source';
+import { initializeDataSource } from './data-source';
 import session from 'express-session';
 import passport from '@middleware/passport.middleware';
 import http from 'http';
@@ -61,14 +61,17 @@ app.use('/wallet', walletRouter);
 app.use('/supported-assets', supportedAssetRouter);
 app.use('/transactions', transactionRouter);
 
+// Create the server without passing app to createServer
 const server = http.createServer();
+
+// Manually handle requests using the Express app
 server.on('request', app);
 
 // Initialize the WebSocket service
 export const webSocketService = new WebSocketService(server); 
 
-// Initialize DB
-AppDataSource.initialize()
+// Initialize DB and start server
+initializeDataSource()
   .then(async () => {
     logger.info('Database connection has been initialized!');
 
@@ -79,14 +82,14 @@ AppDataSource.initialize()
     server.listen(port, () => {
       logger.info(`Server is running on http://localhost:${port}`);
     });
+
+    // Initialize and start the sweeping service
+    sweepingService.initiateSweeping();
+
+    // Initialize the consolidation backup process
+    consolidationService.backupProcess(omnibusVaultAccountId);
   })
   .catch((err) => {
     logger.error(`Error during database connection initialization: ${err}`);
+    process.exit(1);
   });
-
-// Initialize and start the sweeping service
-sweepingService.initiateSweeping();
-
-
-// Initialize the consolidation backup process
-consolidationService.backupProcess(omnibusVaultAccountId);
