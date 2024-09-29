@@ -26,7 +26,7 @@ This demo aims to accelerate and simplify the integration of Fireblocks into you
 - **Frontend**: Built with Next.js, this frontend application serves as a retail cryptocurrency platform, providing features like portfolio dashboards, multi-asset wallet management, and transaction handling. It leverages Fireblocks for secure asset management, offering a comprehensive example of a retail-facing crypto solution.
 - **Backend**: Developed with Node.js (Express.js), the backend handles essential operations such as user authentication, wallet and asset management, and transaction processing. It integrates with a MySQL database to store user data locally and communicates with the Fireblocks API for wallet and transaction operations.
 
-............................................................................................................................................................................................................................................................
+---
 
 ### Before you start: Fireblocks workspace configurations:
 
@@ -92,7 +92,7 @@ Notes:
 - An automation should be created for **each** supported asset on **every** withdrawal vault account.
 - The amounts used above should be changed based on the anticipated operation in your app.
 
-............................................................................................................................................................................................................................................................
+---
 
 ### Running the application:
 
@@ -196,7 +196,7 @@ npm run dev
 
 3. Navigate to `http://localhost:3001/login` to access the app console UI.
 
-............................................................................................................................................................................................................................................................
+---
 
 ### Setup script:
 
@@ -226,7 +226,7 @@ The setup script uses the `OMNIBUS_VAULT` and `WITHDRAWAL_VAULTS` variables to d
 This flexibility allows you to either use existing vault accounts or let the application create new ones. If you're using existing vault accounts, make sure to set the appropriate IDs in the .env file before running the application for the first time.
 **Important:** The setup script runs only once when the database is empty. If you need to re-run the setup, you'll need to clear the existing data from the database.
 
-............................................................................................................................................................................................................................................................
+---
 
 ### Backend Application Details
 
@@ -241,7 +241,7 @@ This backend application showcases how to integrate Fireblocks' services into a 
 
 For more detailed information, please refer to the [Backend README](./backend).
 
-............................................................................................................................................................................................................................................................
+---
 
 ### Frontend Application Details
 
@@ -251,11 +251,7 @@ The frontend, named **FireX**, is a retail cryptocurrency demo platform built wi
 
 For more detailed information, please refer to the [Frontend README](./frontend).
 
-............................................................................................................................................................................................................................................................
-
-## Contributing
-
-Please read the CONTRIBUTING.md file for details on our code of conduct and the process for submitting pull requests.
+---
 
 ## License
 
