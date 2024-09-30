@@ -18,7 +18,7 @@ import { setupScript } from './setupScript';
 import { createLogger } from '@util/logger.utils';
 import { vaultConfig } from '@util/vaultConfig';
 
-const omnibusVaultAccountId = vaultConfig.getOmnibusVaultId()
+
 
 const logger = createLogger('<Main>');
 
@@ -61,8 +61,10 @@ app.use('/wallet', walletRouter);
 app.use('/supported-assets', supportedAssetRouter);
 app.use('/transactions', transactionRouter);
 
-
+// Create the server without passing app to createServer
 const server = http.createServer();
+
+// Manually handle requests using the Express app
 server.on('request', app);
 
 // Initialize the WebSocket service
@@ -76,6 +78,10 @@ initializeDataSource()
     // Run setup script after database initialization
     await setupScript();
 
+    // Log vault configuration
+    logger.info(`Omnibus Vault ID after setup: ${vaultConfig.getOmnibusVaultId()}`);
+    logger.info(`Withdrawal Vault IDs after setup: ${vaultConfig.getWithdrawalVaultIds()}`);
+
     // Start the server
     server.listen(port, () => {
       logger.info(`Server is running on http://localhost:${port}`);
@@ -85,7 +91,7 @@ initializeDataSource()
     sweepingService.initiateSweeping();
 
     // Initialize the consolidation backup process
-    consolidationService.backupProcess(omnibusVaultAccountId);
+    consolidationService.backupProcess(vaultConfig.getOmnibusVaultId());
   })
   .catch((err) => {
     logger.error(`Error during database connection initialization: ${err}`);

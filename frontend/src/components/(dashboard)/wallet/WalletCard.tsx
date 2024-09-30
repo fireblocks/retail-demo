@@ -43,18 +43,18 @@ export const WalletCard: React.FC<Asset> = observer(({ assetId, addresses }) => 
       walletStore.updateOutgoingBalance(transactionParams.assetId, parseFloat(transactionParams.amount));
       
       notificationStore.addNotification(
-        'New Transaction',
-        `Transaction created successfully for ${name}:
-        Amount:       ${transactionParams.amount}
+        'New Outgoing Transaction',
+        `Amount:       ${transactionParams.amount}
         Destination:  ${transactionParams.destination}
         Transaction ID: ${result.id}
-        Status:       ${result.status}`
+        Status: ${result.status}`
       );
+
       transactionStore.addTransaction({
         amount: transactionParams.amount,
         assetId: transactionParams.assetId,
         id: "",
-        fireblocksTxId: result.id,
+        fireblocksTxId: result.fireblocksTxId,
         status: result.status,
         txHash: "",
         destinationExternalAddress: transactionParams.destination,
@@ -73,26 +73,31 @@ export const WalletCard: React.FC<Asset> = observer(({ assetId, addresses }) => 
   const renderIcon = () => {
     switch (assetId) {
       case 'BTC_TEST':
-        return <IconCoinBitcoin size={100} color="#2563eb" />;
+        return <IconCoinBitcoin size={100} color="#2563eb" strokeWidth="1" />;
       case 'ETH_TEST5':
-        return <IconCurrencyEthereum size={100} color="#2563eb" />;
+        return <IconCurrencyEthereum size={100} color="#2563eb" strokeWidth="1"/>;
       case 'SOL_TEST':
-        return <IconCurrencySolana size={100} color="#2563eb" />;
+        return <IconCurrencySolana size={100} color="#2563eb" strokeWidth="1" />;
       default:
-        return <IconCoinBitcoin size={100} color="#2563eb" />;
+        return <IconCoinBitcoin size={100} color="#2563eb" strokeWidth="1" />;
     }
   };
 
   return (
-    <Card className="w-[300px] text-primary">
-      <CardHeader>
-        <CardTitle className="flex justify-center">
+    <Card className="w-[300px] text-primary drop-shadow shadow-xl shadow-blue-200 border-blue-100">
+      <CardHeader className="pb-0 relative overflow-hidden h-40 flex flex-col justify-between rounded-t-lg bg-gradient-to-r from-white to-blue-400">
+        <div className="absolute left-1/8 top-1/4 transform -translate-x-1/2 -translate-y-1/2" style={{ transform: 'rotate(-20deg) scale(3.5)' }}>
           {renderIcon()}
+        </div>
+        <div className="h-8" /> {/* Spacer */}
+        <CardTitle className="z-10 relative mb-2 w-full ml-4">
+          <CardDescription className="flex justify-end text-white text-xl">
+            {getAssetNameById(assetId)}
+          </CardDescription>
         </CardTitle>
-        <CardDescription className="flex justify-center">{getAssetNameById(assetId)}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col text-center items-center space-y-1.5">
+        <div className="flex flex-col text-center items-center space-y-1.5 mt-4">
           <Label htmlFor="balance">Balance</Label>
           <Input
             id="balance"

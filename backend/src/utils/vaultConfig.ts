@@ -1,3 +1,7 @@
+import { createLogger } from '@util/logger.utils';
+
+const logger = createLogger('<VaultConfig>');
+
 class VaultConfig {
   private static instance: VaultConfig;
   private omnibusVaultId: string | null = null;
@@ -14,6 +18,7 @@ class VaultConfig {
 
   public setOmnibusVaultId(id: string): void {
     this.omnibusVaultId = id;
+    logger.info(`Set Omnibus Vault ID: ${id}`);
   }
 
   public getOmnibusVaultId(): string | null {
@@ -22,6 +27,7 @@ class VaultConfig {
 
   public setWithdrawalVaultIds(ids: string[]): void {
     this.withdrawalVaultIds = ids;
+    logger.info(`Set Withdrawal Vault IDs: ${ids.join(', ')}`);
   }
 
   public getWithdrawalVaultIds(): string[] {

@@ -10,7 +10,6 @@ import type {
   TransactionResponse,
 } from '@fireblocks/ts-sdk';
 import apiClient from './api.client';
-import { transactionService } from '@service';
 import { createLogger } from '@util/logger.utils';
 
 const logger = createLogger('<Fireblocks Tx Service>');
@@ -20,7 +19,7 @@ class FireblocksTransactionService {
     transactionParameters: TransactionRequest
   ): Promise<CreateTransactionResponse> {
     logger.info(
-      `creating a new transaction with these parameters: ${JSON.stringify(transactionParameters)}`
+      `creating a new transaction with these parameters: ${JSON.stringify(transactionParameters, null, 2)}`
     );
 
     const payload: TransactionRequest = {
@@ -36,6 +35,7 @@ class FireblocksTransactionService {
       },
       feeLevel: transactionParameters.feeLevel,
       customerRefId: transactionParameters.customerRefId,
+      externalTxId: transactionParameters.externalTxId
     };
 
     if (
@@ -103,27 +103,27 @@ class FireblocksTransactionService {
       throw error.response.data;
     }
   }
-  
-  async getNetworkFee(
-    assetId: string
-  ): Promise<EstimatedNetworkFeeResponse>{
+
+  async getNetworkFee(assetId: string): Promise<EstimatedNetworkFeeResponse> {
     try {
-      const networkFee = await apiClient.fireblocksClient.transactions.estimateNetworkFee({
-        assetId
-      })
-  
+      const networkFee =
+        await apiClient.fireblocksClient.transactions.estimateNetworkFee({
+          assetId,
+        });
+
       return networkFee.data;
-    } catch(error) {
-      logger.error(`Failed to get current network fee from Fireblocks for asset ${assetId}`)
-      throw error.response.data
+    } catch (error) {
+      logger.error(
+        `Failed to get current network fee from Fireblocks for asset ${assetId}`
+      );
+      throw error.response.data;
     }
-    
   }
   async estimateTransactionFee(
     transactionParameters: TransactionRequest
   ): Promise<EstimatedTransactionFeeResponse | undefined> {
     logger.info(
-      `Estimating fee for these transaction parameters: ${JSON.stringify(transactionParameters)}`
+      `Estimating fee for these transaction parameters: ${JSON.stringify(transactionParameters, null, 2)}`
     );
     const payload = {
       assetId: transactionParameters.assetId,
@@ -150,7 +150,7 @@ class FireblocksTransactionService {
         })
       ).data;
       logger.info(
-        `Fee estimation results, high: ${JSON.stringify(response.high)}\nmedium: ${JSON.stringify(response.medium)}\nlow: ${JSON.stringify(response.low)}`
+        `Fee estimation results, high: ${JSON.stringify(response.high, null, 2)}\nmedium: ${JSON.stringify(response.medium, null, 2)}\nlow: ${JSON.stringify(response.low, null, 2)}`
       );
       return response;
     } catch (error) {

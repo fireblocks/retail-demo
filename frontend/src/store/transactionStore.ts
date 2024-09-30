@@ -26,24 +26,25 @@ class TransactionStore {
   }
 
   addTransaction(transaction: Transaction) {
-    // Ensure createdAt is a Unix timestamp in milliseconds
+    
     const createdAt = typeof transaction.createdAt === 'string' 
-      ? parseInt(transaction.createdAt, 10) * 1000 // Convert seconds to milliseconds if needed
-      : Date.now(); // Use current timestamp if not provided
+      ? parseInt(transaction.createdAt, 10) * 1000 
+      : Date.now(); 
 
     this.transactions.push({
       ...transaction, 
-      outgoing: false,
-      createdAt: createdAt.toString() // Store as string for consistency
+      createdAt: createdAt.toString()
     });
   }
 
-  updateTransactionStatus(transaction: Transaction) {
+  updateTransactionStatus(transaction: any) {
     let found = false;
     console.log("Looking for transaction:", transaction)
     for (let tx of this.transactions) {
       if (tx.fireblocksTxId === transaction.fireblocksTxId) {
         tx.status = transaction.status;
+        tx.txHash = transaction.txHash;
+        tx.destinationExternalAddress = transaction.destinationExternalAddress
         found = true;
         break; 
       }

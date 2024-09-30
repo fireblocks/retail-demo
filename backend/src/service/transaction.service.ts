@@ -8,7 +8,7 @@ import {
   TransactionRequestFeeLevelEnum,
   TransactionResponse,
 } from '@fireblocks/ts-sdk';
-import { DBTransaction } from 'src/types/WebhookEvents';
+import { DBTransaction } from 'src/types/interfaces';
 
 const logger = createLogger('<Tx Service>');
 
@@ -42,11 +42,12 @@ class TransactionService {
       sourceExternalAddress: txParams.sourceExternalAddress || null,
       destinationExternalAddress: txParams.destinationExternalAddress || null,
       createdAt: txParams.createdAt,
-      outgoing: txParams.outgoing
+      outgoing: txParams.outgoing,
+      externalTxId: txParams.externalTxId
     });
 
     logger.info(
-      `Saving new transaction to the DB, tx object: ${JSON.stringify(transaction)}`
+      `Saving new transaction to the DB, tx object: ${JSON.stringify(transaction, null, 2)}`
     );
 
     transaction.save();
@@ -57,10 +58,10 @@ class TransactionService {
       where: { fireblocksTxId: txId },
     });
     logger.info(
-      `in update tx status for transaction: ${JSON.stringify(transaction)}, fbksTxId: ${txId}, status: ${status}`
+      `in update tx status for transaction: ${JSON.stringify(transaction, null, 2)}, fbksTxId: ${txId}, status: ${status}`
     );
     transaction.status = status;
-    logger.info(`Saving the transaction after status update: ${transaction}`)
+    logger.info(`Saving the transaction after status update: ${JSON.stringify(transaction, null, 2)}`);
     transaction.save();
     return transaction;
   }
@@ -99,8 +100,9 @@ class TransactionService {
           where: { fireblocksVaultId: txData.destination.id },
         })) || transaction.destinationVaultAccount;
     }
-
+    logger.info(`Updating Completed Transaction Details, txInfo:\n ${JSON.stringify(txData, null, 2)}`)
     await transaction.save();
+    logger.info(`Returning updated transaction object:\n ${JSON.stringify(transaction, null, 2)}`)
     return transaction;
   }
 

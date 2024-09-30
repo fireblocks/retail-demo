@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import transactionStore from "@/store/transactionStore";
 import {
@@ -15,10 +15,11 @@ import { IconChevronDown, IconChevronUp, IconArrowDown, IconArrowUp } from "@tab
 import { Button } from "@/foundation/button";
 import { parseDate } from "@/lib/helpers";
 import React from 'react';
+import supportedAssetStore from "@/store/supportedAssetsStore";
 
 const Transactions = observer(() => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
+  
   useEffect(() => {
     const transactions = transactionStore.getTransactions();
     if (transactions.length === 0) {
@@ -50,15 +51,41 @@ const Transactions = observer(() => {
 
   const tableHeaders = ["Type", "Date", "Asset ID", "Amount", "Status", ""];
 
-  const formatDate = (dateString: string | number) => {
-    const date = parseDate(dateString);
-    return date.toLocaleString(); // This will display both date and time
-    // If you only want the date, use: return date.toLocaleDateString();
+  const formatDate = (dateValue: string | number) => {
+    const date = parseDate(dateValue);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
   };
+
+  const getExplorerUrl = (assetId: string, txHash: string) => {
+    const asset = supportedAssetStore.getAssetById(assetId);
+    if (!asset || !asset.explorerUrl) return '#';
+
+    if (assetId === 'SOL_TEST') {
+      return `${asset.explorerUrl}${txHash}?cluster=devnet`;
+    } else {
+      return `${asset.explorerUrl}${txHash}`;
+    }
+  };
+
+  const sortedTransactions = useMemo(() => {
+    return [...transactionStore.transactions].sort((a, b) => {
+      const timestampA = typeof a.createdAt === 'string' ? parseInt(a.createdAt, 10) : a.createdAt;
+      const timestampB = typeof b.createdAt === 'string' ? parseInt(b.createdAt, 10) : b.createdAt;
+      return timestampB - timestampA;
+    });
+  }, [transactionStore.transactions]);
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {transactionStore.transactions.length > 0 ? (
+      {sortedTransactions.length > 0 ? (
         <Table>
           <TableHeader className="bg-white border-x-0 border-y-0 hover:bg-white">
             <TableRow>
@@ -68,7 +95,7 @@ const Transactions = observer(() => {
             </TableRow>
           </TableHeader>
           <TableBody className="border border-x-blue-100 border-r-0 border-l-0">
-            {transactionStore.transactions.map((transaction) => (
+            {sortedTransactions.map((transaction) => (
               <React.Fragment key={transaction.fireblocksTxId}>
                 <TableRow className="text-primary">
                   <TableCell className="text-center">
@@ -101,7 +128,17 @@ const Transactions = observer(() => {
                     <TableCell colSpan={5}>
                       <div className="p-4 bg-gray-50 text-primary">
                         <p><strong>Fireblocks Transaction ID:</strong> {transaction.fireblocksTxId}</p>
-                        <p><strong>Transaction Hash:</strong> {transaction.txHash}</p>
+                        <p>
+                          <strong>Transaction Hash:</strong>{' '}
+                          <a 
+                            href={getExplorerUrl(transaction.assetId, transaction.txHash)}
+                            className="underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {transaction.txHash}
+                          </a>
+                        </p>
                         <p><strong>Destination Address:</strong> {transaction.destinationExternalAddress}</p>
                       </div>
                     </TableCell>

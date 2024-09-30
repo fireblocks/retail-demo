@@ -18,12 +18,12 @@ export class WalletAssetBalance extends BaseEntity {
   @Column()
   assetId: string;
 
-  @Column('decimal', { precision: 18, scale: 8, default: 0 })
+  @Column('decimal', { precision: 26, scale: 18, default: 0 })
   totalBalance: number;
-  
-  @Column('decimal', { precision: 18, scale: 8, default: 0 })
+
+  @Column('decimal', { precision: 26, scale: 18, default: 0 })
   incomingPendingBalance: number;
 
-  @Column('decimal', { precision: 18, scale: 8, default: 0 })
+  @Column('decimal', { precision: 26, scale: 18, default: 0 })
   outgoingPendingBalance: number;
 }

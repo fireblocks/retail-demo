@@ -11,30 +11,28 @@ import { fireblocksTransactionService } from '@service/fireblocks/';
 import { createLogger } from '@util/logger.utils';
 import { feeService } from '@service/fee.service';
 import { vaultConfig } from '@util/vaultConfig';
-
+import { randomUUID } from 'crypto';
 
 const logger = createLogger('<Transaction Controller>');
 
 export class TransactionController {
-
   private static convertUiTxRequestToFireblocksTx(uiTxData: any) {
-
-    const withdrawalVaultAccountId = vaultConfig.getRandomWithdrawalVaultId()
+    const withdrawalVaultAccountId = vaultConfig.getRandomWithdrawalVaultId();
 
     const fireblocksTxData: TransactionRequest = {
       source: {
         type: TransferPeerPathType.VaultAccount,
-        id: withdrawalVaultAccountId
+        id: withdrawalVaultAccountId,
       },
       destination: {
         type: TransferPeerPathType.OneTimeAddress,
         oneTimeAddress: {
-          address: uiTxData.destination
-        }
+          address: uiTxData.destination,
+        },
       },
       assetId: uiTxData.assetId,
-      amount: uiTxData.amount
-    }
+      amount: uiTxData.amount,
+    };
 
     return fireblocksTxData;
   }
@@ -42,18 +40,21 @@ export class TransactionController {
   static async initiateNewTxFlow(req: Request, res: Response) {
     try {
       const txRequest = req.body.transactionRequest;
-      const txFee = await feeService.estimateTransactionFee(TransactionController.convertUiTxRequestToFireblocksTx(txRequest))
-      res.status(200).send(txFee)
-    } catch(error) {
-      logger.error(`${'Failed to initiate new transaction flow:'} ${JSON.stringify(error, null, 2)}`)
-      res.status(500).send()
-    }
-    
+      const txFee = await feeService.estimateTransactionFee(
+        TransactionController.convertUiTxRequestToFireblocksTx(txRequest)
+      );
+      res.status(200).send(txFee);
+    } catch (error) {
+      logger.error(
+        `${'Failed to initiate new transaction flow:'} ${JSON.stringify(error, null, 2)}`
+      );
 
+      res.status(500).send();
+    }
   }
   static async createNewTransfer(req: Request, res: Response) {
     try {
-      const withdrawalVaultAccountId = vaultConfig.getRandomWithdrawalVaultId()
+      const withdrawalVaultAccountId = vaultConfig.getRandomWithdrawalVaultId();
       const user = req.user as User;
       const wallet = user.wallet;
       const transactionRequest = req.body.transactionRequest;
@@ -72,10 +73,15 @@ export class TransactionController {
         );
       }
 
+      const externalTxId = randomUUID();
+      logger.info(`Generated new externalTxId: ${externalTxId}`)
+
       transactionRequest.source = {
         type: TransferPeerPathType.VaultAccount,
-        id: withdrawalVaultAccountId
+        id: withdrawalVaultAccountId,
       };
+
+      transactionRequest.externalTxId = externalTxId;
 
       await walletAssetService.updateAssetBalance(
         wallet,
@@ -101,14 +107,15 @@ export class TransactionController {
         assetId: transactionRequest.assetId,
         fireblocksTxId: fireblocksTx.id,
         status: fireblocksTx.status,
-        destinationExternalAddress: transactionRequest.destination.oneTimeAddress.address,
+        destinationExternalAddress:
+          transactionRequest.destination.oneTimeAddress.address,
         outgoing: true,
-        createdAt: Date.now().toString()
-      }
-      );
-      res.status(200).send({...fireblocksTx, ...walletAssetBalance});
+        createdAt: Date.now().toString(),
+        externalTxId
+      });
+      res.status(200).send({ fireblocksTxId: fireblocksTx.id, status: fireblocksTx.status, ...walletAssetBalance });
     } catch (error) {
-      logger.error(JSON.stringify(error));
+      logger.error(JSON.stringify(error, null, 2));
       res.status(500).send();
     }
   }
@@ -116,13 +123,40 @@ export class TransactionController {
   static async getTransactions(req: Request, res: Response) {
     const user = req.user as User;
     const wallet = await Wallet.findOne({
-      where: { user: user },
+      where: { user},
       relations: ['transactions'],
     });
     if (wallet) {
       res.status(200).send(wallet.transactions);
     } else {
       res.status(404).send('No wallet found for transactions');
+    }
+  }
+
+  static async getNonSweepingTransactions(req: Request, res: Response) {
+    try {
+      const user = req.user as User;
+      
+      const wallet = await Wallet.findOne({
+        where: { user: { id: user.id } },
+        relations: ['transactions'],
+      });
+
+      if (!wallet) {
+        logger.warn(`No wallet found for user ${user.id}`);
+        return res.status(404).json({ message: 'Wallet not found' });
+      }
+
+      const nonSweepingTransactions = wallet.transactions.filter(
+        transaction => transaction.isSweeping !== true
+      );
+
+      logger.info(`Retrieved ${nonSweepingTransactions.length} non-sweeping transactions for user ${user.id}`);
+      
+      res.status(200).json(nonSweepingTransactions);
+    } catch (error) {
+      logger.error(`Error fetching non-sweeping transactions: ${error}`);
+      res.status(500).json({ message: 'Error fetching transactions' });
     }
   }
 }

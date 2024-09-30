@@ -6,30 +6,47 @@ import { Asset } from '@model/Asset';
 import { TransactionRequest, TransferPeerPathType } from '@fireblocks/ts-sdk';
 import { createLogger } from '@util/logger.utils';
 import { vaultConfig } from '@util/vaultConfig';
+import { transactionService } from './transaction.service';
 
 const logger = createLogger('<Sweeping Service>');
 
 /** Interval for sweeping process in milliseconds (5 minutes) */
-const SWEEP_INTERVAL = 5 * 60 * 1000;
+const SWEEP_INTERVAL = 1 * 60 * 1000;
 
 /** Minimum balances required for sweeping each asset */
 const MINIMUM_BALANCES = {
   ETH_TEST5: 0.01,
   SOL_TEST: 0.1,
 };
+
 /**
  * Service responsible for managing the sweeping process of assets
  */
 class SweepingService {
+  private omnibusVaultAccountId: string | null = null;
+  private withdrawalVaultAccountsIds: string[] = [];
+
+  constructor() {
+    this.updateVaultConfig();
+  }
+
+  private updateVaultConfig() {
+    this.omnibusVaultAccountId = vaultConfig.getOmnibusVaultId();
+    this.withdrawalVaultAccountsIds = vaultConfig.getWithdrawalVaultIds();
+  }
+
   /**
    * Initiates the sweeping process at regular intervals
    */
   public async initiateSweeping(): Promise<void> {
     setInterval(async () => {
       try {
+        this.updateVaultConfig();
         await this.performSweep();
       } catch (error) {
-        logger.error(`Error during sweeping: ${JSON.stringify(error)}`);
+        logger.error(
+          `Error during sweeping: ${error})}`
+        );
       }
     }, SWEEP_INTERVAL);
   }
@@ -51,6 +68,7 @@ class SweepingService {
           asset
         );
         if (balanceVerified) {
+          logger.info(`Going to create sweeping tx for asset: ${asset.assetId} from vault account ID: ${vaultAccountId}`)
           await this.createSweepingTransaction(vaultAccountId, asset);
         } else {
           logger.info(
@@ -69,21 +87,31 @@ class SweepingService {
    * @returns {Promise<Asset[]>} Array of assets to sweep
    */
   private async getAssetsToSweep(): Promise<Asset[]> {
-    const sweepableAssetIds = Object.keys(MINIMUM_BALANCES).filter(
-      (assetId) => assetId !== 'BTC_TEST'
-    );
+    const sweepableAssetIds = Object.keys(MINIMUM_BALANCES);
+    logger.info(`Sweepable asset IDs: ${JSON.stringify(sweepableAssetIds)}`);
+    const excludedVaultIds = [...this.withdrawalVaultAccountsIds, this.omnibusVaultAccountId].filter(id => id != null);
 
-    const assetsToSweep = await Asset.createQueryBuilder('asset')
+    const query = Asset.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.vaultAccount', 'vaultAccount')
       .leftJoinAndSelect('asset.wallet', 'wallet')
       .where('asset.assetId IN (:...assetIds)', { assetIds: sweepableAssetIds })
       .andWhere('asset.balance >= :minBalance', { minBalance: 0 })
-      .getMany();
+      .andWhere('asset.isSwept != :isSwept', { isSwept: true});
 
-    return assetsToSweep.filter(
+    if (excludedVaultIds.length > 0) {
+      query.andWhere('vaultAccount.fireblocksVaultId NOT IN (:...excludedVaultIds)', {
+        excludedVaultIds: excludedVaultIds,
+      });
+    }
+
+
+    const assetsToSweep = await query.getMany();
+    const result = assetsToSweep.filter(
       (asset) =>
         parseFloat(asset.balance.toString()) >= MINIMUM_BALANCES[asset.assetId]
     );
+
+    return result;
   }
 
   /**
@@ -103,6 +131,12 @@ class SweepingService {
       vaultAccountMap.get(vaultAccountId).push(asset);
     }
 
+    if(vaultAccountMap.size != 0) {
+      logger.info(`Vault Account Map to sweep:\n ${JSON.stringify(Object.fromEntries(vaultAccountMap), null, 2)}`)
+    } else {
+      logger.info(`There are no assets to sweep.`)
+    }
+    
     return vaultAccountMap;
   }
 
@@ -116,9 +150,8 @@ class SweepingService {
     vaultAccountId: string,
     asset: Asset
   ): Promise<void> {
-
     const omnibusVaultAccountId = vaultConfig.getOmnibusVaultId();
-    
+
     const transactionRequest: TransactionRequest = {
       assetId: asset.assetId,
       amount: asset.balance.toString(),
@@ -128,7 +161,7 @@ class SweepingService {
       },
       destination: {
         type: TransferPeerPathType.VaultAccount,
-        id: omnibusVaultAccountId
+        id: omnibusVaultAccountId,
       },
       feeLevel: 'LOW',
       note: 'Automated sweeping transaction',
@@ -140,8 +173,20 @@ class SweepingService {
           transactionRequest
         );
       logger.info(
-        `Sweeping transaction created for asset ${asset.assetId} from vault ${vaultAccountId} to vault 0. Transaction ID: ${txId}`
+        `Sweeping transaction created for asset ${asset.assetId} from vault ${vaultAccountId} to vault 0. Transaction ID: ${txId.id}`
       );
+      
+      await transactionService.addTransaction({
+        fireblocksTxId: txId.id,
+        status: txId.status,
+        amount: asset.balance.toString(),
+        wallet: asset.wallet,
+        createdAt: Date.now().toString(),
+        assetId: asset.assetId,
+        isSweeping: true
+      });
+      asset.isSwept = true;
+      asset.save()
     } catch (error) {
       logger.error(
         `Error creating sweeping transaction for asset ${asset.assetId} from vault ${vaultAccountId}:`,

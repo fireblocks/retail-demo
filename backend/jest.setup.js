@@ -1,0 +1,1 @@
+require('tsconfig-paths/register');

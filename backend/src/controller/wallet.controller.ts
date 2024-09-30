@@ -8,6 +8,7 @@ import { Wallet } from '@model/Wallet';
 import { isUTXO } from '../utils/utxo.utils';
 import { createLogger } from '@util/logger.utils';
 import { vaultConfig } from '@util/vaultConfig';
+import { formatBalance } from '@util/number.utils';
 
 const logger = createLogger('<Wallet Controller>');
 
@@ -23,11 +24,19 @@ export class WalletController {
         relations: ['assets', 'assets.vaultAccount', 'assetBalances'],
       });
 
-      logger.info(`In get user wallet: ${JSON.stringify(wallet)}`);
+      wallet.length !== 0
+        ? logger.info(`In get user wallet: ${JSON.stringify(wallet, null, 2)}`)
+        : logger.info(`No wallet found, will create a new wallet`);
+
       const walletData = wallet.map((wallet) => ({
         id: wallet.id,
         name: wallet.name,
-        assetBalances: wallet.assetBalances,
+        assetBalances: wallet.assetBalances.map(balance => ({
+          ...balance,
+          totalBalance: formatBalance(balance.totalBalance),
+          incomingPendingBalance: formatBalance(balance.incomingPendingBalance),
+          outgoingPendingBalance: formatBalance(balance.outgoingPendingBalance),
+        })),
         assets: wallet.assets.map((asset) => ({
           assetId: asset.assetId,
           address: asset.address,
@@ -37,7 +46,9 @@ export class WalletController {
 
       res.status(200).json(walletData);
     } catch (error) {
-      logger.error(`Error fetching user wallets: ${JSON.stringify(error)}`);
+      logger.error(
+        `Error fetching user wallets: ${JSON.stringify(error, null, 2)}`
+      );
       res.status(500).json({ message: 'Internal server error' });
     }
   }
@@ -68,7 +79,7 @@ export class WalletController {
       );
 
       const { address, balance, vaultAccount } = newAsset;
-      logger.info(`Created a new asset: ${JSON.stringify(newAsset)}`);
+      logger.info(`Created a new asset: ${JSON.stringify(newAsset, null, 2)}`);
       res.status(200).send({
         assetId: newAsset.assetId,
         address,
@@ -76,14 +87,18 @@ export class WalletController {
         vaultAccountId: vaultAccount.fireblocksVaultId,
       });
     } catch (error) {
-      logger.error(`Error creating asset in wallet: ${JSON.stringify(error)}`);
+      logger.error(
+        `Error creating asset in wallet: ${JSON.stringify(error, null, 2)}`
+      );
       res.status(500).json({ message: 'Internal server error' });
     }
   }
 
   static createUserWallet = async (req: Request, res: Response) => {
     const user: User = req.user as User;
-    logger.info(`Got a request to create a new wallet for user: ${user}`);
+    logger.info(
+      `Got a request to create a new wallet for user: ${JSON.stringify(user, null, 2)}`
+    );
     const wallet = Wallet.create({
       name: user.name,
       assets: [],
@@ -91,7 +106,9 @@ export class WalletController {
       description: `${user.id} wallet`,
       user,
     });
-
+    logger.info(
+      `Wallet created successfully, wallet: ${JSON.stringify(wallet, null, 2)}`
+    );
     await wallet.save();
     res.status(200).send([{ ...wallet }]);
   };
@@ -172,7 +189,10 @@ async function determineVaultAccount(
 
     if (assetsInVault.length === 0) {
       // Found a vault account without the requested asset
-      console.log("Found an existing vault account without the requested asset:", asset.vaultAccount.fireblocksVaultId)
+      console.log(
+        'Found an existing vault account without the requested asset:',
+        asset.vaultAccount.fireblocksVaultId
+      );
       return asset.vaultAccount;
     }
   }
@@ -187,6 +207,9 @@ async function determineVaultAccount(
   });
 
   await newVaultAccount.save();
-  console.log("Created a new vault account:", newVaultAccount.fireblocksVaultId)
+  console.log(
+    'Created a new vault account:',
+    newVaultAccount.fireblocksVaultId
+  );
   return newVaultAccount;
 }

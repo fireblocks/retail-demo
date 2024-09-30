@@ -2,16 +2,16 @@
     {
         "name": "Solana Devnet",
         "fireblocksAssetId": "SOL_TEST",
-        "explorerUrl": "https://solscan.io/?cluster=devnet"
+        "explorerUrl": "https://solscan.io/tx/"
     },
     {
         "name": "Ethereum Sepolia",
         "fireblocksAssetId": "ETH_TEST5",
-        "explorerUrl": "https://sepolia.etherscan.io/"
+        "explorerUrl": "https://sepolia.etherscan.io/tx/"
     },
     {
         "name": "Bitcoin Testnet",
         "fireblocksAssetId": "BTC_TEST",
-        "explorerUrl": "https://mempool.space/testnet"
+        "explorerUrl": "https://mempool.space/testnet/"
     }
 ]

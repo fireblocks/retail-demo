@@ -1,15 +1,4 @@
-
-<p align="center">
-  <img src="../logo.svg" width="350" alt="accessibility text">
-</p>
-<div align="center">
-
-  [Fireblocks Developer Portal](https://developers.fireblocks.com) </br>
-  [Fireblocks Sandbox Sign-up](https://www.fireblocks.com/developer-sandbox-sign-up/) <br/><br/>
-  <h1> FireX - Fireblocks Retail App Demo Frontend </h1>
-</div>
-<br/>
-
+# FireX - Retail Crypto Platform Demo Application
 
 FireX is a retail cryptocurrency demo platform built with Next.js, MobX, and integrated with Fireblocks for secure asset management. This project aims to provide a reference for Fireblocks integration when building applications to serve retail facing use cases.
 
@@ -57,21 +46,22 @@ FireX is designed to provide a comprehensive solution for retail crypto users. I
 
 The project follows a modular structure:
 
+```
 frontend/
 ├── src/
-│ ├── app/ # Next.js app router pages
-│ ├── components/ # Reusable React components
-│ ├── foundation/ # UI foundation components
-│ ├── lib/ # Utility functions and constants
-│ ├── providers/ # React context providers
-│ ├── services/ # API and external service integrations
-│ ├── store/ # MobX stores for state management
-│ └── styles/ # Global styles and Tailwind config
-├── public/ # Static assets
-├── .env # Environment variables
-├── next.config.js # Next.js configuration
-└── package.json # Project dependencies and scripts
-
+│   ├── app/          # Next.js app router pages
+│   ├── components/   # Reusable React components
+│   ├── foundation/   # UI foundation components
+│   ├── lib/          # Utility functions and constants
+│   ├── providers/    # React context providers
+│   ├── services/     # API and external service integrations
+│   ├── store/        # MobX stores for state management
+│   └── styles/       # Global styles and Tailwind config
+├── public/           # Static assets
+├── .env              # Environment variables
+├── next.config.js    # Next.js configuration
+└── package.json      # Project dependencies and scripts
+```
 
 ## Setup and Installation
 
@@ -87,7 +77,7 @@ frontend/
    ```
 
 3. Set up environment variables:
-   Create a `.env` file in the root directory and add the following variables:
+   Create a `.env.local` file in the root directory and add the following variables:
    ```
    NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:3000
    CMC_API_KEY=your_coinmarketcap_api_key
