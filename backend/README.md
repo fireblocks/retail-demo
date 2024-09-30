@@ -10,9 +10,13 @@
 </div>
 <br/>
 
+---
+
 ## Overview
 
 This application is a retail demo for Fireblocks, designed to showcase the integration of Fireblocks' services with a typical retail facing use-case. It provides functionality for user authentication, wallet management, asset handling, and transaction processing.
+
+---
 
 ## Features
 
@@ -22,6 +26,8 @@ This application is a retail demo for Fireblocks, designed to showcase the integ
 - Transaction processing
 - WebSocket integration for real-time updates
 - Integration with Fireblocks API for vault account management and transactions
+
+---
 
 ## Technology Stack
 
@@ -33,6 +39,8 @@ This application is a retail demo for Fireblocks, designed to showcase the integ
 - Passport.js for authentication
 - WebSocket for real-time communication
 - Docker for containerization
+
+---
 
 ## Models
 
@@ -57,6 +65,8 @@ This application is a retail demo for Fireblocks, designed to showcase the integ
 7. **SupportedAssets**: Represents the list of the assets supported by the demo application.
    - Fields: id, explorerUrl, fireblocksAssetId, depositCounter, name
 
+--- 
+
 ## Services
 
 1. **AuthService**: Handles user authentication and creation.
@@ -67,21 +77,30 @@ This application is a retail demo for Fireblocks, designed to showcase the integ
 5. **TransactionService**: Handles transaction-related operations.
 6. **ApiClient**: Handles the initialization of a Fireblocks API Client using environment variables.
 - Description: This service handles the creation of the Fireblocks API Client that is used by the app to interact with the Fireblocks API gateway. More information can be found [here](https://developers.fireblocks.com/reference/typescript-sdk#your-first-fireblocks-typescript-code-example).
+The ApiClient also introduces 2 important concepts when working with the Fireblocks API:
+a. [Idempotent Requests](https://developers.fireblocks.com/reference/api-idempotency)
+b. [Rate Limits](https://developers.fireblocks.com/reference/rate-limiting)
 7. **FireblocksTransactionService**: Interacts with Fireblocks API for transaction creation and processing.
 - Description: This services wraps primary endpoints of the Fireblocks SDK to provide the required transactions related functionality for the demo app. More information on the endpoint can be found [here](https://developers.fireblocks.com/reference/gettransactions).
+Also introduces an important concept of the `externalTxId` parameter used for unique transaction identification and making sure transactions are idempotent forever. Learn more in the [Manage Withdrawals guide](https://developers.fireblocks.com/docs/manage-withdrawals-at-scale#idempotent-transactions)
 8. **FireblocksVaultAccountService**: Interacts with Fireblocks API for vault account related operations.
 - Description: This service wraps several endpoints of the Fireblocks SDK and provides vault account related functionality to the demo application. It manages vault account creation and updates as well as asset wallet and deposit address creation for users on the Fireblocks workspace. More information on the endpoint can be found [here](https://developers.fireblocks.com/reference/createvaultaccount).
+Also useful information about your vault structure can be found here in the [Manage Deposits guide](https://developers.fireblocks.com/docs/manage-deposits-at-scale).
 9. **ConsolidationService**: Manages UTXO asset deposits, monitors their count, and initiates UTXO consolidations in the omnibus vault account
 - Description: This service handles all the functionality around UTXO asset deposits consolidations. It will update the deposit counter for each supported UTXO asset, per deposit and will trigger a consolidation Tx to burn small unspent inputs on the omnibus wallet to allow high withdrawal availability for users. Additionally, the service has an automated job that runs periodically to act as a backup to the deposits-triggered process and prevent a situation where more than 250 UTXOs are stored in the omnibus wallet. More information about UTXO consolidation can be found [here](https://developers.fireblocks.com/reference/consolidate-utxos).
 10. **FeeService**: Handles the functionality to obtain the Tx estimations from Fireblocks API and calculates the required fee for a withdrawal Tx.
 More information can be found [here](https://developers.fireblocks.com/reference/estimate-transaction-fee).
 11. **SweepingService**: Handles the functionality for sweeping account-based asset deposits from intermediate vault accounts to the omnibus vault account.
 - Description: This service acts as a job that runs periodically and checks for balances in the intermediate deposit vault accounts created for users, once a balance above the sweeping threshold is found a sweeping Tx is triggered to accumulate all user deposits of account-based assets into the omnibus vault account. More information can be found [here](https://developers.fireblocks.com/reference/sweep-to-omnibus-1).
-12. **WebhookService**: Handles balance updates for user deposits based on the webhooks events sent from Fireblocks.
-13. **WebSocketService**: Manages real-time communication with clients.
+12. **WebhookService**: Handles balance updates for user deposits based on the webhooks events sent from Fireblocks. Learn more about Fireblocks webhooks in the [Configure Webhooks guide](https://developers.fireblocks.com/docs/configure-webhooks)
+13. **WebSocketService**: Manages real-time communication with the Front-End.
+
+--- 
 
 ## Setup and Configuration
 Please refer to the root project [README.md](../README.md) file for setup & configuration instructions.
+
+---
 
 ## API Endpoints
 
@@ -89,9 +108,13 @@ Please refer to the root project [README.md](../README.md) file for setup & conf
 - `/wallet`: Wallet management routes
 - `/transaction`: Transaction processing routes
 
+---
+
 ## WebSocket
 
 The application uses WebSocket for real-time updates. Clients can connect to the WebSocket server to receive updates about transactions and wallet balances.
+
+---
 
 ## Notes
 
@@ -99,6 +122,8 @@ The application uses WebSocket for real-time updates. Clients can connect to the
 - The application uses a setup script to initialize the required vault accounts and assets. This script runs on the first startup.
 - Make sure to secure your environment variables and API keys when deploying to production.
 - Make sure to put assets in the withdrawal vault accounts before actually trying to create withdrawals.
+
+---
 
 ## License
 
