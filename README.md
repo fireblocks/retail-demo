@@ -36,7 +36,7 @@ This demo aims to accelerate and simplify the integration of Fireblocks into you
 - [Create an API user](https://support.fireblocks.io/hc/en-us/articles/4407823826194-Adding-new-API-Users) to execute the backend processes. Our implementation requires a single API user with signing privileges to simplify the integration, for a production-grade application please consider these [best practices](https://developers.fireblocks.com/docs/manage-api-keys) when creating your API users and access levels.
 - Upload the `fireblocks-secret.key` file to the `keys` folder on the backend root project folder (create one if not yet created).
 - Complete the API user setup and the pairing to an API Co-Signer.
-- Copy the API user ID from the console UI and update it in your .env file of the backend library (more details below).
+- Copy the API user ID from the console UI and update it in your `.env` file of the backend library (more details below).
 - Enable [One Time Address (OTA)](https://support.fireblocks.io/hc/en-us/articles/4409104568338-One-Time-Address-OTA-feature) to allow user withdrawals.
 - Determine your Omnibus vault account and copy its ID (found on the vault account page URL) and update your `.env` file in the backend library (more details below).
 - Create your withdrawal vault accounts and update their IDs in the `.env` file.
@@ -139,8 +139,8 @@ Here's a detailed explanation of each variable:
 
 #### **Frontend enviroment variables**
 
-- NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:3000
-- CMC_API_KEY=your_coinmarketcap_api_key
+- `NEXT_PUBLIC_BACKEND_BASE_URL`=http://localhost:3000
+- `CMC_API_KEY`=your_coinmarketcap_api_key
 
 You can get your CMC API key [here](https://coinmarketcap.com/api/documentation/v1/) - we use it as USD value oracle for the app.
 
@@ -149,19 +149,14 @@ You can get your CMC API key [here](https://coinmarketcap.com/api/documentation/
 Prerequisites:
 
 - Install Docker and Docker Compose.
-- Updating the `.env` files for bth servers as mentioned above.
+- Update the `.env` files for both servers as mentioned above.
 
-1. Build the Docker image:
-
+1. Run the app in Docker:
    ```
-   docker build -t fireblocks-retail-demo .
+   docker-compose up --build
    ```
-
-2. Run the Docker container:
-   ```
-   docker-compose up
-   ```
-3. Navigate to `http://localhost:3001/login` once the container is up and running to access the app console UI.
+      
+2. Navigate to `http://localhost:3001/login` once the container is up and running to access the app console UI.
 
 #### **Run locally:**
 
