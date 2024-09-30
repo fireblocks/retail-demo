@@ -100,10 +100,6 @@ The application uses WebSocket for real-time updates. Clients can connect to the
 - Make sure to secure your environment variables and API keys when deploying to production.
 - Make sure to put assets in the withdrawal vault accounts before actually trying to create withdrawals.
 
-## Contributing
-
-Please read the CONTRIBUTING.md file for details on our code of conduct and the process for submitting pull requests.
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details.

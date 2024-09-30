@@ -7,7 +7,11 @@
     "start": "ts-node -r tsconfig-paths/register src/app.ts",
     "typeorm": "typeorm-ts-node-commonjs",
     "prettier": "npx prettier --write .",
-    "build": "tsc --skipLibCheck"
+    "build": "tsc --skipLibCheck",
+    "test": "jest --config jest.config.js",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:specific": "jest -t"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +24,7 @@
     "express": "4.18.2",
     "express-session": "^1.18.0",
     "jsonwebtoken": "^9.0.2",
+    "limiter": "^2.1.0",
     "mysql2": "^3.11.0",
     "passport": "^0.7.0",
     "passport-github": "^1.1.0",
@@ -29,21 +34,26 @@
     "passport-local": "^1.0.0",
     "pg": "^8.4.0",
     "reflect-metadata": "^0.1.13",
-    "tsconfig-paths": "^4.2.0",
     "typeorm": "^0.3.20",
     "winston": "^3.14.2",
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.25.4",
+    "@babel/preset-typescript": "^7.24.7",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.13",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^16.18.109",
     "@types/passport": "^1.0.16",
     "@types/ws": "^8.5.12",
     "dotenv": "^16.4.5",
+    "jest": "^29.7.0",
     "prettier": "^3.3.3",
+    "ts-jest": "^29.2.5",
     "ts-node": "10.9.1",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "4.5.2"
   }
 }

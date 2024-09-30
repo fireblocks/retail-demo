@@ -1,7 +1,10 @@
+import { getAssetNameById } from "@/lib/helpers";
+import notificationStore from "@/store/notificationStore";
 import assetStore from "@/store/supportedAssetsStore";
 import terminalStore from "@/store/terminalStore";
 import transactionStore from "@/store/transactionStore";
 import walletStore from "@/store/walletStore";
+import { measureMemory } from "vm";
 
 type MessageHandler = (data: any) => void;
 
@@ -31,7 +34,7 @@ class WebSocketService {
   private handleMessage(event: MessageEvent): void {
     try {
       const message: WebSocketMessage = JSON.parse(event.data);
-      terminalStore.addLog(JSON.stringify(message, null, 2));
+      terminalStore.addLog(`${new Date().toISOString()}: Got new message from the Backend: \n ${JSON.stringify(message, null, 2)}`);
       
       this.dispatchMessage(message);
     } catch (error) {
@@ -41,7 +44,6 @@ class WebSocketService {
 
   private handleClose(): void {
     console.log('WebSocket disconnected');
-    // Implement reconnection logic here if needed
   }
 
   private handleError(error: Event): void {
@@ -93,11 +95,23 @@ webSocketService.addMessageHandler('new_address', (message) => {
 webSocketService.addMessageHandler('transaction_status', (message) => {
   console.log('Transaction status update:', message);
   transactionStore.updateTransactionStatus(message)
+  notificationStore.addNotification(
+    "Transaction Status Update",
+    `Transaction Status updated to :
+    Status: ${message.status}
+    Fireblocks Tx ID: ${message.fireblocksTxId}`
+  )
 });
 
 webSocketService.addMessageHandler('new_incoming_transaction', (message) => {
   console.log('New Incoming transaction:', message);
   transactionStore.addTransaction(message)
+  notificationStore.addNotification(
+    "New Incoming Transaction",
+    `Asset: ${getAssetNameById(message.assetId)} 
+     Amount: ${message.amount}
+     Source: ${message.sourceAddress}`
+  )
 });
 
 export default webSocketService;

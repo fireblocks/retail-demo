@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { WebhookEvents } from 'src/types/WebhookEvents';
+import { WebhookEvents } from 'src/types/enums';
 import { TransactionStateEnum, TransferPeerPathType } from '@fireblocks/ts-sdk';
 import { webSocketService } from 'src/app';
 import {
@@ -71,6 +71,10 @@ export class WebhookController {
       WebhookController.isSweepingTransaction(txData)
     ) {
       await WebhookController.handleNewOutgoingTransaction(txData);
+    } else if (
+      WebhookController.isVaultToVaultTransaction(txData)
+    ) {
+      logger.info(`Detected new vault to vault transaction - ignoring`)
     }
   }
 
@@ -85,6 +89,9 @@ export class WebhookController {
     return txData.source.type === TransferPeerPathType.VaultAccount;
   }
 
+  private static isVaultToVaultTransaction(txData: any): boolean {
+    return txData.source.type === TransferPeerPathType. VaultAccount && txData.destination.type === TransferPeerPathType.VaultAccount;
+  }
   private static isSweepingTransaction(txData: any): boolean {
     return (
       txData.source.type === TransferPeerPathType.VaultAccount &&
@@ -97,39 +104,34 @@ export class WebhookController {
     txData: any
   ): Promise<void> {
     logger.info(
-      `Handling new incoming transaction, data: ${JSON.stringify(txData)}`
+      `Handling new incoming transaction, data: ${JSON.stringify(txData, null, 2)}`
     );
     const wallet = await walletService.getWalletForAddress(
       txData.destinationAddress
     );
 
-    await transactionService.addTransaction(
-      {
-        wallet,
-        amount: txData.amount,
-        assetId: txData.assetId,
-        fireblocksTxId: txData.id,
-        status: txData.status,
-        txHash: txData.txHash || '',
-        sourceVaultAccount: (await vaultService.getVaultAccountForFireblocksVaultId(
+    await transactionService.addTransaction({
+      wallet,
+      amount: txData.amount,
+      assetId: txData.assetId,
+      fireblocksTxId: txData.id,
+      status: txData.status,
+      txHash: txData.txHash || '',
+      sourceVaultAccount:
+        (await vaultService.getVaultAccountForFireblocksVaultId(
           txData.source.id
         )) || '',
-        destinationVaultAccount: (await vaultService.getVaultAccountForFireblocksVaultId(
+      destinationVaultAccount:
+        (await vaultService.getVaultAccountForFireblocksVaultId(
           txData.destination.id
         )) || '',
-        sourceExternalAddress: txData.sourceAddress || '',
-        destinationExternalAddress: txData.destinationAddress || '',
-        createdAt: txData.createdAt,
-        outgoing: false
-      }
-    );
+      sourceExternalAddress: txData.sourceAddress || '',
+      destinationExternalAddress: txData.destinationAddress || '',
+      createdAt: txData.createdAt,
+      outgoing: false,
+    });
 
     await walletAssetService.updatePendingBalance(txData, 'incoming', wallet);
-    await assetService.updateIsSwept(
-      false,
-      txData.destination.id,
-      txData.assetId
-    );
     WebhookController.notifyUser(wallet.user.id, 'new_incoming_transaction', {
       fireblocksTxId: txData.id,
       ...txData,
@@ -205,10 +207,20 @@ export class WebhookController {
         parseFloat(txData.amountInfo.amount)
       );
       await assetService.updateIncomingBalance(txData, wallet);
+      
       const tx = await transactionService.updateTransactionStatus(
         txData.id,
         txData.status
       );
+      
+      await walletAssetService.updatePendingBalance(txData, "incoming_completed", wallet)
+
+      await assetService.updateIsSwept(
+        false,
+        txData.destination.id,
+        txData.assetId
+      );
+
       WebhookController.notifyUser(wallet.user.id, 'transaction_status', tx);
       WebhookController.notifyUser(wallet.user.id, 'balance_update', {
         assetId: txData.assetId,
@@ -230,21 +242,18 @@ export class WebhookController {
     const amount = Number(txData.amountInfo.amount) * -1;
     const { wallet, transaction } =
       await transactionService.getWalletForFireblocksTx(txData.id);
-    await walletAssetService.updateAssetBalance(wallet, txData.assetId, amount);
+    // await walletAssetService.updateAssetBalance(wallet, txData.assetId, amount);
     await walletAssetService.updatePendingBalance(
       { amountInfo: { amount } },
       'outgoing',
       wallet
     );
+    const updatedTx = await transactionService.updateCompletedTransactionDetails(txData)
     WebhookController.notifyUser(
       wallet.user.id,
       'transaction_status',
-      transaction
+      updatedTx
     );
-    WebhookController.notifyUser(wallet.user.id, 'balance_update', {
-      assetId: txData.assetId,
-      amount,
-    });
   }
 
   private static async handleFailedTransaction(txData: any): Promise<void> {
@@ -255,6 +264,11 @@ export class WebhookController {
       await WebhookController.handleFailedOutgoingTransaction(txData);
     } else {
       logger.info('Detected failed sweeping transaction.');
+      await assetService.updateIsSwept(
+        false,
+        txData.destination.id,
+        txData.assetId
+      )
     }
   }
 
@@ -281,9 +295,13 @@ export class WebhookController {
       'Detected failed outgoing transaction. Removing pending outgoing balance'
     );
 
-    const transaction = transactionService.updateTransactionStatus(txData.id, txData.status)
-    const { wallet } =
-      await transactionService.getWalletForFireblocksTx(txData.id);
+    const transaction = transactionService.updateTransactionStatus(
+      txData.id,
+      txData.status
+    );
+    const { wallet } = await transactionService.getWalletForFireblocksTx(
+      txData.id
+    );
     await walletAssetService.updatePendingBalance(
       { amountInfo: { amount: Number(txData.amountInfo.amount) * -1 } },
       'outgoing',

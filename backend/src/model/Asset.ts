@@ -22,10 +22,10 @@ export class Asset extends BaseEntity {
   @Column({ nullable: true })
   address: string;
 
-  @Column({nullable: true})
-  isSwept: boolean
+  @Column({ nullable: true })
+  isSwept: boolean;
 
-  @Column('decimal', { precision: 18, scale: 8, default: 0 })
+  @Column('decimal', { precision: 26, scale: 18, default: 0 })
   balance: number;
 
   @ManyToOne(() => VaultAccount, (vaultAccount) => vaultAccount.assets)

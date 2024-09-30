@@ -38,8 +38,7 @@ class WalletAssetService {
     wallet: Wallet
   ) {
     logger.info(
-      `In WalletAssetService: updatePendingBalance() with amount:
-      ${parseFloat(data.amountInfo.amount)}`
+      `In WalletAssetService: updatePendingBalance() with amount: ${parseFloat(data.amountInfo.amount)}`
     );
     let amountToUpdate = parseFloat(data.amountInfo.amount);
     const walletAsset = await WalletAssetBalance.findOne({
@@ -51,11 +50,13 @@ class WalletAssetService {
         `New ${updateType} transfer created - updating pending balance for wallet: ${wallet.id}. Pending balance change ${amountToUpdate}`
       );
 
-      updateType === 'incoming'
-        ? (walletAsset.incomingPendingBalance =
-            Number(walletAsset.incomingPendingBalance) + amountToUpdate)
-        : (walletAsset.outgoingPendingBalance =
-            Number(walletAsset.outgoingPendingBalance) + amountToUpdate);
+      if(updateType === 'incoming') {
+        Number(walletAsset.incomingPendingBalance) + amountToUpdate;
+      } else if (updateType === 'incoming_completed') {
+        Number(walletAsset.incomingPendingBalance) + (amountToUpdate * -1);
+      } else {
+        Number(walletAsset.outgoingPendingBalance) + amountToUpdate;
+      }        
 
       walletAsset.save();
       return walletAsset;

@@ -11,16 +11,12 @@ export const formatBalance = (balance: string): string => {
 
 export const parseDate = (dateString: string | number): Date => {
   if (typeof dateString === 'string') {
-    // Check if it's a Unix timestamp (seconds or milliseconds)
     const unixTimestamp = parseInt(dateString, 10);
     if (!isNaN(unixTimestamp)) {
-      // If it's in seconds, convert to milliseconds
       return new Date(unixTimestamp * (unixTimestamp > 1e12 ? 1 : 1000));
-    }
-    // If it's not a Unix timestamp, try parsing it as a regular date string
+    } 
     return new Date(dateString);
   }
-  // If it's already a number, assume it's a Unix timestamp in milliseconds
   return new Date(dateString);
 };
 

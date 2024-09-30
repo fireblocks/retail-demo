@@ -23,8 +23,12 @@ async function createVaultAccount(
       });
       logger.info(`Created ${name} vault account in DB only`);
     } else {
-      const response =
-        await fireblocksVaultAccountService.createVaultAccount(name, undefined, false, false);
+      const response = await fireblocksVaultAccountService.createVaultAccount(
+        name,
+        undefined,
+        false,
+        false
+      );
       vaultAccount = VaultAccount.create({
         fireblocksVaultId: response.id,
         name,
@@ -49,17 +53,22 @@ async function createOrUpdateAsset(
     try {
       let assetBalance;
       try {
-        assetBalance = await fireblocksVaultAccountService.getVaultWalletBalance(
-          vaultAccount.fireblocksVaultId,
-          assetId
-        );
+        assetBalance =
+          await fireblocksVaultAccountService.getVaultWalletBalance(
+            vaultAccount.fireblocksVaultId,
+            assetId
+          );
       } catch (error) {
-        logger.info(`No existing ${assetId} vault wallet found in Fireblocks for vault account: ${vaultAccount.fireblocksVaultId}. Proceeding to create it.`);
+        logger.info(
+          `No existing ${assetId} vault wallet found in Fireblocks for vault account: ${vaultAccount.fireblocksVaultId}. Proceeding to create it.`
+        );
       }
 
       if (assetBalance) {
         // Asset exists in Fireblocks, fetch its address
-        logger.info(`There is a ${assetId} vault wallet in vault account: ${vaultAccount.fireblocksVaultId}. Going to fetch the address and save in local DB only.`);
+        logger.info(
+          `There is a ${assetId} vault wallet in vault account: ${vaultAccount.fireblocksVaultId}. Going to fetch the address and save in local DB only.`
+        );
         let addressesResponse;
         try {
           addressesResponse = await fireblocksVaultAccountService.getAddresses(
@@ -67,10 +76,14 @@ async function createOrUpdateAsset(
             assetId
           );
         } catch (error) {
-          logger.info(`Failed to fetch addresses for ${assetId} in vault account: ${vaultAccount.fireblocksVaultId}. Proceeding without address.`);
+          logger.info(
+            `Failed to fetch addresses for ${assetId} in vault account: ${vaultAccount.fireblocksVaultId}. Proceeding without address.`
+          );
         }
         const address =
-          addressesResponse && addressesResponse.addresses && addressesResponse.addresses.length > 0
+          addressesResponse &&
+          addressesResponse.addresses &&
+          addressesResponse.addresses.length > 0
             ? addressesResponse.addresses[0].address
             : null;
 
@@ -84,7 +97,9 @@ async function createOrUpdateAsset(
         });
       } else {
         // Asset doesn't exist in Fireblocks, create it
-        logger.info(`There is NO ${assetId} vault wallet in vault account: ${vaultAccount.fireblocksVaultId}. Going to create vault wallet and save in local DB.`);
+        logger.info(
+          `There is NO ${assetId} vault wallet in vault account: ${vaultAccount.fireblocksVaultId}. Going to create vault wallet and save in local DB.`
+        );
         let newAddress;
         try {
           newAddress = await fireblocksVaultAccountService.createVaultWallet(
@@ -92,7 +107,10 @@ async function createOrUpdateAsset(
             assetId
           );
         } catch (error) {
-          logger.error(`Failed to create vault wallet for ${assetId} in vault account: ${vaultAccount.fireblocksVaultId}.`, error);
+          logger.error(
+            `Failed to create vault wallet for ${assetId} in vault account: ${vaultAccount.fireblocksVaultId}.`,
+            error
+          );
           return;
         }
         existingAsset = Asset.create({
@@ -115,7 +133,9 @@ async function createOrUpdateAsset(
 
 async function createOrUpdateSupportedAssets(): Promise<void> {
   for (const asset of supportedAssets) {
-    const existingAsset = await SupportedAsset.findOne({ where: { fireblocksAssetId: asset.fireblocksAssetId } });
+    const existingAsset = await SupportedAsset.findOne({
+      where: { fireblocksAssetId: asset.fireblocksAssetId },
+    });
     if (!existingAsset) {
       const newAsset = SupportedAsset.create({
         name: asset.name,
@@ -133,7 +153,7 @@ async function createOrUpdateSupportedAssets(): Promise<void> {
 export async function setupScript(): Promise<void> {
   try {
     // Check for Omnibus Vault ID
-    let omnibusVaultId = process.env.OMNIBUS_VAULT;
+    let omnibusVaultId = process.env.OMNIBUS_VAULT || null;
     let omnibusVault: VaultAccount;
 
     if (!omnibusVaultId) {
@@ -144,14 +164,17 @@ export async function setupScript(): Promise<void> {
     } else {
       // Use existing Omnibus Vault ID
       omnibusVault = await createVaultAccount('Omnibus Vault', omnibusVaultId);
+      logger.info(`Using existing Omnibus Vault with ID: ${omnibusVaultId}`);
     }
 
+    // Create assets for Omnibus Vault
     for (const asset of supportedAssets) {
       await createOrUpdateAsset(asset.fireblocksAssetId, omnibusVault);
     }
 
     // Store Omnibus Vault ID in the configuration service
     vaultConfig.setOmnibusVaultId(omnibusVault.fireblocksVaultId);
+    logger.info(`Set Omnibus Vault ID in config: ${vaultConfig.getOmnibusVaultId()}`);
 
     // Check for Withdrawal Vault IDs
     let withdrawalVaultIds = process.env.WITHDRAWAL_VAULTS
@@ -160,7 +183,7 @@ export async function setupScript(): Promise<void> {
 
     const createdWithdrawalVaultIds: string[] = [];
 
-    // Create Withdrawal Vaults if not provided
+    // Create or use existing Withdrawal Vaults
     for (let i = 0; i < 3; i++) {
       const vaultName = `Withdrawal Vault #${i + 1}`;
       let vault: VaultAccount;
@@ -168,30 +191,32 @@ export async function setupScript(): Promise<void> {
       if (withdrawalVaultIds[i]) {
         // Use existing Withdrawal Vault ID
         vault = await createVaultAccount(vaultName, withdrawalVaultIds[i]);
+        logger.info(`Using existing ${vaultName} with ID: ${vault.fireblocksVaultId}`);
       } else {
         // Create new Withdrawal Vault in Fireblocks
         vault = await createVaultAccount(vaultName);
-        withdrawalVaultIds[i] = vault.fireblocksVaultId;
         logger.info(`Created ${vaultName} with ID: ${vault.fireblocksVaultId}`);
       }
 
+      // Create assets for Withdrawal Vault
       for (const asset of supportedAssets) {
         await createOrUpdateAsset(asset.fireblocksAssetId, vault);
       }
 
-      // Store each created withdrawal vault ID
+      // Store each created or existing withdrawal vault ID
       createdWithdrawalVaultIds.push(vault.fireblocksVaultId);
     }
 
     // Store Withdrawal Vault IDs in the configuration service
     vaultConfig.setWithdrawalVaultIds(createdWithdrawalVaultIds);
+    logger.info(`Set Withdrawal Vault IDs in config: ${vaultConfig.getWithdrawalVaultIds().join(', ')}`);
 
     // Create or update supported assets
     await createOrUpdateSupportedAssets();
 
     logger.info(`Setup completed successfully!`);
   } catch (error) {
-    logger.error(`Setup failed: ${JSON.stringify(error)}`);
+    logger.error(`Setup failed: ${JSON.stringify(error, null, 2)}`);
     process.exit(1);
   }
 }

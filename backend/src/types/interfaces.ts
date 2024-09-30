@@ -1,11 +1,11 @@
 import { VaultAccount } from "@model/VaultAccount";
 import { Wallet } from "@model/Wallet";
 
-export enum WebhookEvents {
-  'NewTransactionCreated' = 'TRANSACTION_CREATED',
-  'TransactionStatusUpdated' = 'TRANSACTION_STATUS_UPDATED',
+export interface EndpointLimit {
+  [endpoint: string]: {
+    [method: string]: number;
+  };
 }
-
 
 export interface DBTransaction {
   wallet: Wallet,
@@ -19,5 +19,7 @@ export interface DBTransaction {
   sourceExternalAddress?: string,
   destinationExternalAddress?: string,
   createdAt: string,
-  outgoing?: boolean
+  outgoing?: boolean,
+  isSweeping?: boolean,
+  externalTxId?: string
 }

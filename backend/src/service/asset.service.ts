@@ -3,6 +3,7 @@ import { Wallet } from '@model/Wallet';
 import { vaultService } from '@service';
 import { VaultAccount } from '@model/VaultAccount';
 import { createLogger } from '@util/logger.utils';
+import { vaultConfig } from '@util/vaultConfig';
 
 const logger = createLogger('<Asset Service>');
 
@@ -33,7 +34,7 @@ class AssetService {
       data.source.id
     );
     const omnibusVaultAccount =
-      await vaultService.getVaultAccountForFireblocksVaultId('0');
+      await vaultService.getVaultAccountForFireblocksVaultId(vaultConfig.getOmnibusVaultId());
 
     const asset = await Asset.findOne({
       where: {
@@ -60,13 +61,16 @@ class AssetService {
     fireblocksVaultAccountId: string,
     assetId: string
   ) {
+    logger.info(`In update isSwept. Going to change Fireblocks vault account id: ${fireblocksVaultAccountId} to isSwept: ${isSwept}`)
     const vaultAccount = await vaultService.getVaultAccountForFireblocksVaultId(
       fireblocksVaultAccountId
     );
     const asset = await Asset.findOne({
       where: { vaultAccount: vaultAccount as VaultAccount, assetId },
     });
+
     asset.isSwept = isSwept;
+    asset.save()
   }
 }
 

@@ -13,7 +13,7 @@ export class Transaction extends BaseEntity {
   @Column()
   assetId: string;
 
-  @Column()
+  @Column( {default: false} )
   outgoing: boolean;
   
   @Column()
@@ -42,6 +42,9 @@ export class Transaction extends BaseEntity {
 
   @Column({ nullable: true })
   sourceExternalAddress?: string;
+
+  @Column( { nullable: true})
+  externalTxId?: string;
 
   @Column({ nullable: true })
   destinationExternalAddress?: string;

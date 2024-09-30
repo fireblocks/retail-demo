@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { createLogger } from '@util/logger.utils';
 
-const logger = createLogger();
+const logger = createLogger('<Webhook Middleware>');
 
 export const validateWebhook =
   (publicKey: string) => (req: Request, res: Response, next: NextFunction) => {
@@ -21,7 +21,6 @@ export const validateWebhook =
 
     const isVerified = verifier.verify(publicKey, signature, 'base64');
     if (isVerified) {
-      logger.info('Got a new webhook:\n', JSON.stringify(message));
       next();
     } else {
       next(new Error(`Invalid signature`));
