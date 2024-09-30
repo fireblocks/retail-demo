@@ -43,126 +43,45 @@ This application is a retail demo for Fireblocks, designed to showcase the integ
    - Fields: id, name, user, assets, transactions, assetBalances, description
 
 3. **Asset**: Represents a cryptocurrency asset.
-   - Fields: id, assetId, assetName, explorerUrl, logoUrl, address, isSwept, balance, vaultAccount, wallet
+   - Fields: id, assetId, assetName, address, isSwept, balance, vaultAccount, wallet
 
 4. **Transaction**: Represents a cryptocurrency transaction.
-   - Fields: id, assetId, status, fireblocksTxId, txHash, amount, isSweeping, sourceVaultAccount, wallet, destinationVaultAccount, sourceExternalAddress, destinationExternalAddress
+   - Fields: id, assetId, status, fireblocksTxId, txHash, amount, isSweeping, sourceVaultAccount, wallet, destinationVaultAccount, sourceExternalAddress, destinationExternalAddress, outgoing, createdAt
 
 5. **VaultAccount**: Represents a Fireblocks vault account.
-   - Fields: id, fireblocksVaultId, name, assets
+   - Fields: id, fireblocksVaultId, name, assets, balance, sourceTransactions, destinationTransactions
 
 6. **WalletAssetBalance**: Represents the balance of an asset in a wallet.
    - Fields: id, wallet, assetId, totalBalance, incomingPendingBalance, outgoingPendingBalance
 
+7. **SupportedAssets**: Represents the list of the assets supported by the demo application.
+   - Fields: id, explorerUrl, fireblocksAssetId, depositCounter, name
+
 ## Services
 
 1. **AuthService**: Handles user authentication and creation.
-2. **WalletService**: Manages wallet-related operations.
-3. **VaultService**: Interacts with Fireblocks vault accounts.
-4. **TransactionService**: Handles transaction-related operations.
-5. **FireblocksTransactionService**: Interacts with Fireblocks API for transaction processing.
-6. **WebSocketService**: Manages real-time communication with clients.
+   - Description: The AuthService provides the functionality for user authentication and login with email & password  / GoogleOAuth2 / GitHub userId.
+2. **AssetService**: Handles balance updates for assets records of the application's users.
+3. **WalletService**: Manages wallet-related operations.
+4. **VaultService**: Interacts with Fireblocks vault accounts.
+5. **TransactionService**: Handles transaction-related operations.
+6. **ApiClient**: Handles the initialization of a Fireblocks API Client using environment variables.
+- Description: This service handles the creation of the Fireblocks API Client that is used by the app to interact with the Fireblocks API gateway. More information can be found [here](https://developers.fireblocks.com/reference/typescript-sdk#your-first-fireblocks-typescript-code-example).
+7. **FireblocksTransactionService**: Interacts with Fireblocks API for transaction creation and processing.
+- Description: This services wraps primary endpoints of the Fireblocks SDK to provide the required transactions related functionality for the demo app. More information on the endpoint can be found [here](https://developers.fireblocks.com/reference/gettransactions).
+8. **FireblocksVaultAccountService**: Interacts with Fireblocks API for vault account related operations.
+- Description: This service wraps several endpoints of the Fireblocks SDK and provides vault account related functionality to the demo application. It manages vault account creation and updates as well as asset wallet and deposit address creation for users on the Fireblocks workspace. More information on the endpoint can be found [here](https://developers.fireblocks.com/reference/createvaultaccount).
+9. **ConsolidationService**: Manages UTXO asset deposits, monitors their count, and initiates UTXO consolidations in the omnibus vault account
+- Description: This service handles all the functionality around UTXO asset deposits consolidations. It will update the deposit counter for each supported UTXO asset, per deposit and will trigger a consolidation Tx to burn small unspent inputs on the omnibus wallet to allow high withdrawal availability for users. Additionally, the service has an automated job that runs periodically to act as a backup to the deposits-triggered process and prevent a situation where more than 250 UTXOs are stored in the omnibus wallet. More information about UTXO consolidation can be found [here](https://developers.fireblocks.com/reference/consolidate-utxos).
+10. **FeeService**: Handles the functionality to obtain the Tx estimations from Fireblocks API and calculates the required fee for a withdrawal Tx.
+More information can be found [here](https://developers.fireblocks.com/reference/estimate-transaction-fee).
+11. **SweepingService**: Handles the functionality for sweeping account-based asset deposits from intermediate vault accounts to the omnibus vault account.
+- Description: This service acts as a job that runs periodically and checks for balances in the intermediate deposit vault accounts created for users, once a balance above the sweeping threshold is found a sweeping Tx is triggered to accumulate all user deposits of account-based assets into the omnibus vault account. More information can be found [here](https://developers.fireblocks.com/reference/sweep-to-omnibus-1).
+12. **WebhookService**: Handles balance updates for user deposits based on the webhooks events sent from Fireblocks.
+13. **WebSocketService**: Manages real-time communication with clients.
 
 ## Setup and Configuration
-
-### Fireblocks API Key Setup
-
-1. Create a `keys` directory in the root of the project if it doesn't exist already.
-
-2. Place your Fireblocks API private key file in the `keys` directory.
-
-3. In your `.env` file, set the `FIREBLOCKS_PATH_TO_SECRET` variable to point to your key file:
-   ```
-   FIREBLOCKS_PATH_TO_SECRET=./keys/your_secret_key_file_name.key
-   ```
-   Replace `your_secret_key_file_name.key` with the actual name of your key file.
-
-
-Note: The Docker setup will automatically include the `keys` directory in the container, ensuring that the application can access your Fireblocks API key.
-Make sure that you also run the front-end applicaiton that can be found [here](https://github.com/fireblocks/retail-demo-fe)
-
-###
-1. Install dependencies:
-   ```
-   npm install
-   ```
-
-2. Set up environment variables:
-   Create a `.env` file in the root directory and add the necessary variables (see Environment Variables section below).
-
-3. Build the Docker image:
-   ```
-   docker build -t fireblocks-retail-demo .
-   ```
-
-4. Run the Docker container:
-   ```
-   docker-compose up
-   ```
-5. Configure a local tunneling like `ngrok` or `exposed` to recieve webhooks. The webhook endpoint is exposed at `/webhook` path which means that you need to configure your Webhook in Fireblocks with the base URL you get from the local tunneling tool + /webhook at the end
-
-6. Alternatively you can run it without Docker if you have MySQL installed locally.
-
-### Environment Variables
-
-The application uses several environment variables for configuration. These are stored in a `.env` file in the root directory. Here's a detailed explanation of each variable:
-
-### Database Configuration
-- `DB_NAME`: Name of the MySQL database (default: retail_demo)
-- `DB_USER`: MySQL user (default: root)
-- `DB_PASSWORD`: MySQL password
-- `DB_HOST`: Database host (default: localhost)
-- `DB_PORT`: Database port (default: 3306)
-
-### Authentication
-- `GOOGLE_CLIENT_ID`: Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
-- `GIT_CLIENT_ID`: GitHub OAuth client ID
-- `GIT_CLIENT_SECRET`: GitHub OAuth client secret 
-- `JWT_SECRET_KEY`: Secret key for JWT token generation
-- `JWT_REFRESH_KEY`: Secret key for JWT refresh token generation
-
-### Fireblocks Configuration
-- `FIREBLOCKS_API_KEY`: Your Fireblocks API key
-- `FIREBLOCKS_PATH_TO_SECRET`: Path to your Fireblocks secret key file
-
-### Application Settings
-- `PORT`: Port on which the server will run (default: 3000)
-- `FRONTEND_BASE_URL`: URL of the frontend application
-
-### Vault Configuration
-- `OMNIBUS_VAULT`: ID of the Omnibus vault in Fireblocks
-- `WITHDRAWAL_VAULTS`: Comma-separated IDs of withdrawal vaults in Fireblocks
-
-### Setup Script Behavior
-
-The setup script uses the `OMNIBUS_VAULT` and `WITHDRAWAL_VAULTS` variables to determine whether to create new vault accounts or use existing ones:
-
-1. If `OMNIBUS_VAULT` is empty:
-   - The script will create a new vault account in Fireblocks called "Omnibus Vault".
-   - It will then create a BTC_TEST wallet in this vault account.
-
-2. If `OMNIBUS_VAULT` contains a value:
-   - The script will use the provided vault ID as the Omnibus vault.
-   - It will not create a new vault account in Fireblocks.
-
-3. If `WITHDRAWAL_VAULTS` is empty:
-   - The script will create three new vault accounts in Fireblocks named "Withdrawal Vault #1", "#2", and "#3".
-   - It will create SOL_TEST, ETH_TEST5, and BTC_TEST wallets in each of these vault accounts.
-
-4. If `WITHDRAWAL_VAULTS` contains a comma-separated list of vault IDs:
-   - The script will use these IDs as the withdrawal vaults.
-   - It will not create new vault accounts in Fireblocks.
-
-This flexibility allows you to either use existing vault accounts or let the application create new ones. If you're using existing vault accounts, make sure to set the appropriate IDs in the .env file before running the application for the first time.
-
-Note: The setup script runs only once when the database is empty. If you need to re-run the setup, you'll need to clear the existing data from the database.
-
-## Running the Application
-
-1. The application will be available at `http://localhost:3000`.
-2. On first run, the setup script will create the necessary vault accounts and assets in Fireblocks (if not provided in the .env file).
-3. You can now use the API endpoints to interact with the application.
+Please refer to the root project [README.md](../README.md) file for setup & configuration instructions.
 
 ## API Endpoints
 
