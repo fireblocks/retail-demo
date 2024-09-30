@@ -149,19 +149,14 @@ You can get your CMC API key [here](https://coinmarketcap.com/api/documentation/
 Prerequisites:
 
 - Install Docker and Docker Compose.
-- Updating the `.env` files for bth servers as mentioned above.
+- Update the `.env` files for both servers as mentioned above.
 
-1. Build the Docker image:
-
+1. Run the app in Docker:
    ```
-   docker build -t fireblocks-retail-demo .
+   docker-compose up --build
    ```
-
-2. Run the Docker container:
-   ```
-   docker-compose up
-   ```
-3. Navigate to `http://localhost:3001/login` once the container is up and running to access the app console UI.
+      
+2. Navigate to `http://localhost:3001/login` once the container is up and running to access the app console UI.
 
 #### **Run locally:**
 
