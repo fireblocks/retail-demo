@@ -98,7 +98,7 @@ Notes:
 
 The retail demo app can run with Docker or locally, both options require updating the environment variable files for both the backend and frontend servers.
 
-#### **Backend enviroment variables**
+#### **Backend environment variables**
 
 Note: You may use the [.env.example](./backend/.env.example) file as reference.
 Here's a detailed explanation of each variable:
