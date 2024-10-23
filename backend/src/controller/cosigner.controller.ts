@@ -7,7 +7,7 @@ import { feeService } from '@service/fee.service';
 import { vaultConfig } from '@util/vaultConfig';
 import { randomUUID } from 'crypto';
 
-const logger = createLogger('<Transaction Controller>');
+const logger = createLogger('<Cosigner Controller>');
 export class CosignerController {
     static async getCosignerData(req: Request, res: Response) {
         const cosignerData = await fireblocksCosignerService.getAllCosignerData();
