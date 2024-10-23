@@ -93,6 +93,16 @@ class ApiService {
     const response = await axiosInstance.post(urls.TRANSCATIONS, { transactionRequest: txData });
     return response.data;
   }
+
+  async getCosigner() {
+    const response = await axiosInstance.get(urls.COSIGNER);
+    return response.data;
+  }
+
+  async getCosigners() {
+    const response = await axiosInstance.get(urls.COSIGNERS);
+    return response.data;
+  }
 }
 
 const apiService = new ApiService();

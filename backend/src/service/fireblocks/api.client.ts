@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const pathToSecret = process.env.FIREBLOCKS_PATH_TO_SECRET;
 const secretKey = readFileSync(pathToSecret!, 'utf8');
-const apiKey = process.env.FIREBLOCKS_API_KEY_ID;
+const apiKey = process.env.FIREBLOCKS_API_KEY;
 
 class ApiClient {
   public fireblocksClient: Fireblocks;

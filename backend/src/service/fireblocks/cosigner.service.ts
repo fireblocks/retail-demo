@@ -19,10 +19,8 @@ class FireblocksCosignerService {
 
   async getAllCosignerData(): Promise<CosignersPaginatedResponse | undefined> {
     try {
-      let yoresponse = await apiClient.fireblocksClient.cosignersBeta.getCosigners()
-      console.log(yoresponse.data);
-      console.log("GET ALL COSIGNER DATA");
-      return yoresponse.data;
+      let response = await apiClient.fireblocksClient.cosignersBeta.getCosigners()
+      return response.data;
     } catch (error) {
       logger.error('Error fetching all cosigner data:', error);
       throw error;

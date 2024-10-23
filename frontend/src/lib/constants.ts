@@ -8,3 +8,5 @@ export const AUTH = `${BACKEND_BASE_URL}/auth`
 export const SUPPORTED_ASSETS = `${BACKEND_BASE_URL}/supported-assets`
 export const TRANSCATIONS = `${BACKEND_BASE_URL}/transactions`
 export const SUBMIT_TRANSACTION = `${TRANSCATIONS}/submit`
+export const COSIGNER = `${BACKEND_BASE_URL}/cosigner/cosigner`
+export const COSIGNERS = `${BACKEND_BASE_URL}/cosigner/cosigners`
