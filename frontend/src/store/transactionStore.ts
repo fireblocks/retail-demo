@@ -67,6 +67,17 @@ class TransactionStore {
   getTransactions() {
     return this.transactions;
   }
+
+  async getCosigner() {
+    const cosigner = await apiService.getCosigner();
+    return cosigner;
+  }
+
+  async getCosigners() {
+    const cosigners = await apiService.getCosigners();
+    return cosigners;
+  }
+
 }
 
 const transactionStore = new TransactionStore();

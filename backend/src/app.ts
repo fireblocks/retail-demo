@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRouter from '@route/auth.route';
 import webhookRouter from '@route/webhook.route';
+import cosignerRouter from '@route/cosiger.route';
 import transactionRouter from '@route/transaction.route';
 import supportedAssetRouter from '@route/supportedAssets.route';
 import walletRouter from '@route/wallet.route';
@@ -60,6 +61,7 @@ app.use(authMiddleware);
 app.use('/wallet', walletRouter);
 app.use('/supported-assets', supportedAssetRouter);
 app.use('/transactions', transactionRouter);
+app.use('/cosigner', cosignerRouter);
 
 // Create the server without passing app to createServer
 const server = http.createServer();
