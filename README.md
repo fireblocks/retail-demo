@@ -3,7 +3,7 @@
 </p>
 <div align="center">
 
-[Fireblocks Developer Portal](https://developers.fireblocks.com) </br>
+[Fireblocks Developer Portal](https://www.fireblocks.com/developers) </br>
 [Fireblocks Sandbox Sign-up](https://www.fireblocks.com/developer-sandbox-sign-up/) <br/><br/>
 
   <h1> Fireblocks Retail App Demo </h1>
